@@ -1,0 +1,1282 @@
+//
+// This file was auto-generated using the following command:
+//
+// jai C:/Dev/jaiscape/workbench//external/miniz/build.jai
+//
+
+size_t :: u64;
+FILE :: void;
+time_t :: s64;
+
+MINIZ_X86_OR_X64_CPU :: 1;
+
+MINIZ_LITTLE_ENDIAN :: 1;
+
+MINIZ_USE_UNALIGNED_LOADS_AND_STORES :: 1;
+
+MINIZ_HAS_64BIT_REGISTERS :: 1;
+
+MZ_ADLER32_INIT :: 1;
+
+MZ_CRC32_INIT :: 0;
+
+MZ_DEFLATED :: 8;
+
+MZ_VERSION :: "10.0.0";
+MZ_VERNUM :: 0xA000;
+MZ_VER_MAJOR :: 10;
+MZ_VER_MINOR :: 0;
+MZ_VER_REVISION :: 0;
+MZ_VER_SUBREVISION :: 0;
+
+MZ_DEFAULT_WINDOW_BITS :: 15;
+
+Z_NULL :: 0;
+
+MAX_WBITS :: 15;
+MAX_MEM_LEVEL :: 9;
+
+MZ_FALSE :: 0;
+MZ_TRUE :: 1;
+
+TDEFL_LESS_MEMORY :: 0;
+
+TINFL_LZ_DICT_SIZE :: 32768;
+
+TINFL_USE_64BIT_BITBUF :: 1;
+
+TINFL_BITBUF_SIZE :: 64;
+
+/* For more compatibility with zlib, miniz.c uses unsigned long for some parameters/struct members. Beware: mz_ulong can be either 32 or 64-bits! */
+mz_ulong :: u32;
+
+/* mz_free() internally uses the MZ_FREE() macro (which by default calls free() unless you've modified the MZ_MALLOC macro) to release a block allocated from the heap. */
+mz_free :: (p: *void) -> void #foreign minizlib;
+
+/* mz_adler32() returns the initial adler-32 value to use when called with ptr==NULL. */
+mz_adler32 :: (adler: mz_ulong, ptr: *u8, buf_len: size_t) -> mz_ulong #foreign minizlib;
+
+/* mz_crc32() returns the initial CRC-32 value to use when called with ptr==NULL. */
+mz_crc32 :: (crc: mz_ulong, ptr: *u8, buf_len: size_t) -> mz_ulong #foreign minizlib;
+
+/* Compression strategies. */
+MZ :: enum s32 {
+    DEFAULT_STRATEGY :: 0;
+    FILTERED         :: 1;
+    HUFFMAN_ONLY     :: 2;
+    RLE              :: 3;
+    FIXED            :: 4;
+
+    MZ_DEFAULT_STRATEGY :: DEFAULT_STRATEGY;
+    MZ_FILTERED         :: FILTERED;
+    MZ_HUFFMAN_ONLY     :: HUFFMAN_ONLY;
+    MZ_RLE              :: RLE;
+    MZ_FIXED            :: FIXED;
+}
+
+/* Heap allocation callbacks.
+Note that mz_alloc_func parameter types purpsosely differ from zlib's: items/size is size_t, not unsigned long. */
+mz_alloc_func :: #type (a0: *void, a1: size_t, a2: size_t) -> *void #c_call;
+mz_free_func :: #type (a0: *void, a1: *void) -> void #c_call;
+mz_realloc_func :: #type (a0: *void, a1: *void, a2: size_t, a3: size_t) -> *void #c_call;
+
+/* Compression levels: 0-9 are the standard zlib-style levels, 10 is best possible compression (not zlib compatible, and may be very slow), MZ_DEFAULT_COMPRESSION=MZ_DEFAULT_LEVEL. */
+MZ_1 :: enum s32 {
+    NO_COMPRESSION      :: 0;
+    BEST_SPEED          :: 1;
+    BEST_COMPRESSION    :: 9;
+    UBER_COMPRESSION    :: 10;
+    DEFAULT_LEVEL       :: 6;
+    DEFAULT_COMPRESSION :: -1;
+
+    MZ_NO_COMPRESSION      :: NO_COMPRESSION;
+    MZ_BEST_SPEED          :: BEST_SPEED;
+    MZ_BEST_COMPRESSION    :: BEST_COMPRESSION;
+    MZ_UBER_COMPRESSION    :: UBER_COMPRESSION;
+    MZ_DEFAULT_LEVEL       :: DEFAULT_LEVEL;
+    MZ_DEFAULT_COMPRESSION :: DEFAULT_COMPRESSION;
+}
+
+/* Flush values. For typical usage you only need MZ_NO_FLUSH and MZ_FINISH. The other values are for advanced use (refer to the zlib docs). */
+MZ_2 :: enum s32 {
+    NO_FLUSH      :: 0;
+    PARTIAL_FLUSH :: 1;
+    SYNC_FLUSH    :: 2;
+    FULL_FLUSH    :: 3;
+    FINISH        :: 4;
+    BLOCK         :: 5;
+
+    MZ_NO_FLUSH      :: NO_FLUSH;
+    MZ_PARTIAL_FLUSH :: PARTIAL_FLUSH;
+    MZ_SYNC_FLUSH    :: SYNC_FLUSH;
+    MZ_FULL_FLUSH    :: FULL_FLUSH;
+    MZ_FINISH        :: FINISH;
+    MZ_BLOCK         :: BLOCK;
+}
+
+/* Return status codes. MZ_PARAM_ERROR is non-standard. */
+MZ_3 :: enum s32 {
+    OK            :: 0;
+    STREAM_END    :: 1;
+    NEED_DICT     :: 2;
+    ERRNO         :: -1;
+    STREAM_ERROR  :: -2;
+    DATA_ERROR    :: -3;
+    MEM_ERROR     :: -4;
+    BUF_ERROR     :: -5;
+    VERSION_ERROR :: -6;
+    PARAM_ERROR   :: -10000;
+
+    MZ_OK            :: OK;
+    MZ_STREAM_END    :: STREAM_END;
+    MZ_NEED_DICT     :: NEED_DICT;
+    MZ_ERRNO         :: ERRNO;
+    MZ_STREAM_ERROR  :: STREAM_ERROR;
+    MZ_DATA_ERROR    :: DATA_ERROR;
+    MZ_MEM_ERROR     :: MEM_ERROR;
+    MZ_BUF_ERROR     :: BUF_ERROR;
+    MZ_VERSION_ERROR :: VERSION_ERROR;
+    MZ_PARAM_ERROR   :: PARAM_ERROR;
+}
+
+mz_internal_state :: struct {}
+
+/* Compression/decompression stream struct. */
+mz_stream_s :: struct {
+    next_in:   *u8; /* pointer to next byte to read */
+    avail_in:  u32; /* number of bytes available at next_in */
+    total_in:  mz_ulong; /* total number of bytes consumed so far */
+
+    next_out:  *u8; /* pointer to next byte to write */
+    avail_out: u32; /* number of bytes that can be written to next_out */
+    total_out: mz_ulong; /* total number of bytes produced so far */
+
+    msg:       *u8; /* error msg (unused) */
+    state:     *mz_internal_state; /* internal state, allocated by zalloc/zfree */
+
+    zalloc:    mz_alloc_func; /* optional heap allocation function (defaults to malloc) */
+    zfree:     mz_free_func; /* optional heap free function (defaults to free) */
+    opaque:    *void; /* heap alloc function user pointer */
+
+    data_type: s32; /* data_type (unused) */
+    adler:     mz_ulong; /* adler32 of the source or uncompressed data */
+    reserved:  mz_ulong; /* not used */
+}
+#run {
+    instance: mz_stream_s;
+    assert(((cast(*void)(*instance.next_in)) - cast(*void)(*instance)) == 0, "mz_stream_s.next_in has unexpected offset % instead of 0", ((cast(*void)(*instance.next_in)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.next_in)) == 8, "mz_stream_s.next_in has unexpected size % instead of 8", size_of(type_of(mz_stream_s.next_in)));
+    assert(((cast(*void)(*instance.avail_in)) - cast(*void)(*instance)) == 8, "mz_stream_s.avail_in has unexpected offset % instead of 8", ((cast(*void)(*instance.avail_in)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.avail_in)) == 4, "mz_stream_s.avail_in has unexpected size % instead of 4", size_of(type_of(mz_stream_s.avail_in)));
+    assert(((cast(*void)(*instance.total_in)) - cast(*void)(*instance)) == 12, "mz_stream_s.total_in has unexpected offset % instead of 12", ((cast(*void)(*instance.total_in)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.total_in)) == 4, "mz_stream_s.total_in has unexpected size % instead of 4", size_of(type_of(mz_stream_s.total_in)));
+    assert(((cast(*void)(*instance.next_out)) - cast(*void)(*instance)) == 16, "mz_stream_s.next_out has unexpected offset % instead of 16", ((cast(*void)(*instance.next_out)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.next_out)) == 8, "mz_stream_s.next_out has unexpected size % instead of 8", size_of(type_of(mz_stream_s.next_out)));
+    assert(((cast(*void)(*instance.avail_out)) - cast(*void)(*instance)) == 24, "mz_stream_s.avail_out has unexpected offset % instead of 24", ((cast(*void)(*instance.avail_out)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.avail_out)) == 4, "mz_stream_s.avail_out has unexpected size % instead of 4", size_of(type_of(mz_stream_s.avail_out)));
+    assert(((cast(*void)(*instance.total_out)) - cast(*void)(*instance)) == 28, "mz_stream_s.total_out has unexpected offset % instead of 28", ((cast(*void)(*instance.total_out)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.total_out)) == 4, "mz_stream_s.total_out has unexpected size % instead of 4", size_of(type_of(mz_stream_s.total_out)));
+    assert(((cast(*void)(*instance.msg)) - cast(*void)(*instance)) == 32, "mz_stream_s.msg has unexpected offset % instead of 32", ((cast(*void)(*instance.msg)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.msg)) == 8, "mz_stream_s.msg has unexpected size % instead of 8", size_of(type_of(mz_stream_s.msg)));
+    assert(((cast(*void)(*instance.state)) - cast(*void)(*instance)) == 40, "mz_stream_s.state has unexpected offset % instead of 40", ((cast(*void)(*instance.state)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.state)) == 8, "mz_stream_s.state has unexpected size % instead of 8", size_of(type_of(mz_stream_s.state)));
+    assert(((cast(*void)(*instance.zalloc)) - cast(*void)(*instance)) == 48, "mz_stream_s.zalloc has unexpected offset % instead of 48", ((cast(*void)(*instance.zalloc)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.zalloc)) == 8, "mz_stream_s.zalloc has unexpected size % instead of 8", size_of(type_of(mz_stream_s.zalloc)));
+    assert(((cast(*void)(*instance.zfree)) - cast(*void)(*instance)) == 56, "mz_stream_s.zfree has unexpected offset % instead of 56", ((cast(*void)(*instance.zfree)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.zfree)) == 8, "mz_stream_s.zfree has unexpected size % instead of 8", size_of(type_of(mz_stream_s.zfree)));
+    assert(((cast(*void)(*instance.opaque)) - cast(*void)(*instance)) == 64, "mz_stream_s.opaque has unexpected offset % instead of 64", ((cast(*void)(*instance.opaque)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.opaque)) == 8, "mz_stream_s.opaque has unexpected size % instead of 8", size_of(type_of(mz_stream_s.opaque)));
+    assert(((cast(*void)(*instance.data_type)) - cast(*void)(*instance)) == 72, "mz_stream_s.data_type has unexpected offset % instead of 72", ((cast(*void)(*instance.data_type)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.data_type)) == 4, "mz_stream_s.data_type has unexpected size % instead of 4", size_of(type_of(mz_stream_s.data_type)));
+    assert(((cast(*void)(*instance.adler)) - cast(*void)(*instance)) == 76, "mz_stream_s.adler has unexpected offset % instead of 76", ((cast(*void)(*instance.adler)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.adler)) == 4, "mz_stream_s.adler has unexpected size % instead of 4", size_of(type_of(mz_stream_s.adler)));
+    assert(((cast(*void)(*instance.reserved)) - cast(*void)(*instance)) == 80, "mz_stream_s.reserved has unexpected offset % instead of 80", ((cast(*void)(*instance.reserved)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_stream_s.reserved)) == 4, "mz_stream_s.reserved has unexpected size % instead of 4", size_of(type_of(mz_stream_s.reserved)));
+    assert(size_of(mz_stream_s) == 88, "mz_stream_s has size % instead of 88", size_of(mz_stream_s));
+}
+
+/* Compression/decompression stream struct. */
+mz_stream :: mz_stream_s;
+
+mz_streamp :: *mz_stream;
+
+/* Returns the version string of miniz.c. */
+mz_version :: () -> *u8 #foreign minizlib;
+
+/* mz_deflateInit() initializes a compressor with default options: */
+/* Parameters: */
+/*  pStream must point to an initialized mz_stream struct. */
+/*  level must be between [MZ_NO_COMPRESSION, MZ_BEST_COMPRESSION]. */
+/*  level 1 enables a specially optimized compression function that's been optimized purely for performance, not ratio. */
+/*  (This special func. is currently only enabled when MINIZ_USE_UNALIGNED_LOADS_AND_STORES and MINIZ_LITTLE_ENDIAN are defined.) */
+/* Return values: */
+/*  MZ_OK on success. */
+/*  MZ_STREAM_ERROR if the stream is bogus. */
+/*  MZ_PARAM_ERROR if the input parameters are bogus. */
+/*  MZ_MEM_ERROR on out of memory. */
+mz_deflateInit :: (pStream: mz_streamp, level: s32) -> s32 #foreign minizlib;
+
+/* mz_deflateInit2() is like mz_deflate(), except with more control: */
+/* Additional parameters: */
+/*   method must be MZ_DEFLATED */
+/*   window_bits must be MZ_DEFAULT_WINDOW_BITS (to wrap the deflate stream with zlib header/adler-32 footer) or -MZ_DEFAULT_WINDOW_BITS (raw deflate/no header or footer) */
+/*   mem_level must be between [1, 9] (it's checked but ignored by miniz.c) */
+mz_deflateInit2 :: (pStream: mz_streamp, level: s32, method: s32, window_bits: s32, mem_level: s32, strategy: s32) -> s32 #foreign minizlib;
+
+/* Quickly resets a compressor without having to reallocate anything. Same as calling mz_deflateEnd() followed by mz_deflateInit()/mz_deflateInit2(). */
+mz_deflateReset :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+
+/* mz_deflate() compresses the input to output, consuming as much of the input and producing as much output as possible. */
+/* Parameters: */
+/*   pStream is the stream to read from and write to. You must initialize/update the next_in, avail_in, next_out, and avail_out members. */
+/*   flush may be MZ_NO_FLUSH, MZ_PARTIAL_FLUSH/MZ_SYNC_FLUSH, MZ_FULL_FLUSH, or MZ_FINISH. */
+/* Return values: */
+/*   MZ_OK on success (when flushing, or if more input is needed but not available, and/or there's more output to be written but the output buffer is full). */
+/*   MZ_STREAM_END if all input has been consumed and all output bytes have been written. Don't call mz_deflate() on the stream anymore. */
+/*   MZ_STREAM_ERROR if the stream is bogus. */
+/*   MZ_PARAM_ERROR if one of the parameters is invalid. */
+/*   MZ_BUF_ERROR if no forward progress is possible because the input and/or output buffers are empty. (Fill up the input buffer or free up some output space and try again.) */
+mz_deflate :: (pStream: mz_streamp, flush: s32) -> s32 #foreign minizlib;
+
+/* mz_deflateEnd() deinitializes a compressor: */
+/* Return values: */
+/*  MZ_OK on success. */
+/*  MZ_STREAM_ERROR if the stream is bogus. */
+mz_deflateEnd :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+
+/* mz_deflateBound() returns a (very) conservative upper bound on the amount of data that could be generated by deflate(), assuming flush is set to only MZ_NO_FLUSH or MZ_FINISH. */
+mz_deflateBound :: (pStream: mz_streamp, source_len: mz_ulong) -> mz_ulong #foreign minizlib;
+
+/* Single-call compression functions mz_compress() and mz_compress2(): */
+/* Returns MZ_OK on success, or one of the error codes from mz_deflate() on failure. */
+mz_compress :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong) -> s32 #foreign minizlib;
+mz_compress2 :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong, level: s32) -> s32 #foreign minizlib;
+
+/* mz_compressBound() returns a (very) conservative upper bound on the amount of data that could be generated by calling mz_compress(). */
+mz_compressBound :: (source_len: mz_ulong) -> mz_ulong #foreign minizlib;
+
+/* Initializes a decompressor. */
+mz_inflateInit :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+
+/* mz_inflateInit2() is like mz_inflateInit() with an additional option that controls the window size and whether or not the stream has been wrapped with a zlib header/footer: */
+/* window_bits must be MZ_DEFAULT_WINDOW_BITS (to parse zlib header/footer) or -MZ_DEFAULT_WINDOW_BITS (raw deflate). */
+mz_inflateInit2 :: (pStream: mz_streamp, window_bits: s32) -> s32 #foreign minizlib;
+
+/* Decompresses the input stream to the output, consuming only as much of the input as needed, and writing as much to the output as possible. */
+/* Parameters: */
+/*   pStream is the stream to read from and write to. You must initialize/update the next_in, avail_in, next_out, and avail_out members. */
+/*   flush may be MZ_NO_FLUSH, MZ_SYNC_FLUSH, or MZ_FINISH. */
+/*   On the first call, if flush is MZ_FINISH it's assumed the input and output buffers are both sized large enough to decompress the entire stream in a single call (this is slightly faster). */
+/*   MZ_FINISH implies that there are no more source bytes available beside what's already in the input buffer, and that the output buffer is large enough to hold the rest of the decompressed data. */
+/* Return values: */
+/*   MZ_OK on success. Either more input is needed but not available, and/or there's more output to be written but the output buffer is full. */
+/*   MZ_STREAM_END if all needed input has been consumed and all output bytes have been written. For zlib streams, the adler-32 of the decompressed data has also been verified. */
+/*   MZ_STREAM_ERROR if the stream is bogus. */
+/*   MZ_DATA_ERROR if the deflate stream is invalid. */
+/*   MZ_PARAM_ERROR if one of the parameters is invalid. */
+/*   MZ_BUF_ERROR if no forward progress is possible because the input buffer is empty but the inflater needs more input to continue, or if the output buffer is not large enough. Call mz_inflate() again */
+/*   with more input data, or with more room in the output buffer (except when using single call decompression, described above). */
+mz_inflate :: (pStream: mz_streamp, flush: s32) -> s32 #foreign minizlib;
+
+/* Deinitializes a decompressor. */
+mz_inflateEnd :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+
+/* Single-call decompression. */
+/* Returns MZ_OK on success, or one of the error codes from mz_inflate() on failure. */
+mz_uncompress :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong) -> s32 #foreign minizlib;
+
+/* Returns a string description of the specified error code, or NULL if the error code is invalid. */
+mz_error :: (err: s32) -> *u8 #foreign minizlib;
+
+Byte :: u8;
+uInt :: u32;
+uLong :: mz_ulong;
+Bytef :: Byte;
+uIntf :: uInt;
+charf :: u8;
+intf :: s32;
+voidpf :: *void;
+uLongf :: uLong;
+voidp :: *void;
+voidpc :: *void;
+
+/* ------------------- Types and macros */
+mz_uint8 :: u8;
+mz_int16 :: s16;
+mz_uint16 :: u16;
+mz_uint32 :: u32;
+mz_uint :: u32;
+mz_int64 :: s64;
+mz_uint64 :: u64;
+mz_bool :: s32;
+
+miniz_def_alloc_func :: (opaque: *void, items: size_t, size: size_t) -> *void #foreign minizlib;
+miniz_def_free_func :: (opaque: *void, address: *void) -> void #foreign minizlib;
+miniz_def_realloc_func :: (opaque: *void, address: *void, items: size_t, size: size_t) -> *void #foreign minizlib;
+
+/* tdefl_init() compression flags logically OR'd together (low 12 bits contain the max. number of probes per dictionary search): */
+/* TDEFL_DEFAULT_MAX_PROBES: The compressor defaults to 128 dictionary probes per dictionary search. 0=Huffman only, 1=Huffman+LZ (fastest/crap compression), 4095=Huffman+LZ (slowest/best compression). */
+TDEFL :: enum s32 {
+    HUFFMAN_ONLY       :: 0;
+    DEFAULT_MAX_PROBES :: 128;
+    MAX_PROBES_MASK    :: 4095;
+
+    TDEFL_HUFFMAN_ONLY       :: HUFFMAN_ONLY;
+    TDEFL_DEFAULT_MAX_PROBES :: DEFAULT_MAX_PROBES;
+    TDEFL_MAX_PROBES_MASK    :: MAX_PROBES_MASK;
+}
+
+/* TDEFL_WRITE_ZLIB_HEADER: If set, the compressor outputs a zlib header before the deflate data, and the Adler-32 of the source data at the end. Otherwise, you'll get raw deflate data. */
+/* TDEFL_COMPUTE_ADLER32: Always compute the adler-32 of the input data (even when not writing zlib headers). */
+/* TDEFL_GREEDY_PARSING_FLAG: Set to use faster greedy parsing, instead of more efficient lazy parsing. */
+/* TDEFL_NONDETERMINISTIC_PARSING_FLAG: Enable to decrease the compressor's initialization time to the minimum, but the output may vary from run to run given the same input (depending on the contents of memory). */
+/* TDEFL_RLE_MATCHES: Only look for RLE matches (matches with a distance of 1) */
+/* TDEFL_FILTER_MATCHES: Discards matches <= 5 chars if enabled. */
+/* TDEFL_FORCE_ALL_STATIC_BLOCKS: Disable usage of optimized Huffman tables. */
+/* TDEFL_FORCE_ALL_RAW_BLOCKS: Only use raw (uncompressed) deflate blocks. */
+/* The low 12 bits are reserved to control the max # of hash probes per dictionary lookup (see TDEFL_MAX_PROBES_MASK). */
+TDEFL_1 :: enum s32 {
+    WRITE_ZLIB_HEADER             :: 4096;
+    COMPUTE_ADLER32               :: 8192;
+    GREEDY_PARSING_FLAG           :: 16384;
+    NONDETERMINISTIC_PARSING_FLAG :: 32768;
+    RLE_MATCHES                   :: 65536;
+    FILTER_MATCHES                :: 131072;
+    FORCE_ALL_STATIC_BLOCKS       :: 262144;
+    FORCE_ALL_RAW_BLOCKS          :: 524288;
+
+    TDEFL_WRITE_ZLIB_HEADER             :: WRITE_ZLIB_HEADER;
+    TDEFL_COMPUTE_ADLER32               :: COMPUTE_ADLER32;
+    TDEFL_GREEDY_PARSING_FLAG           :: GREEDY_PARSING_FLAG;
+    TDEFL_NONDETERMINISTIC_PARSING_FLAG :: NONDETERMINISTIC_PARSING_FLAG;
+    TDEFL_RLE_MATCHES                   :: RLE_MATCHES;
+    TDEFL_FILTER_MATCHES                :: FILTER_MATCHES;
+    TDEFL_FORCE_ALL_STATIC_BLOCKS       :: FORCE_ALL_STATIC_BLOCKS;
+    TDEFL_FORCE_ALL_RAW_BLOCKS          :: FORCE_ALL_RAW_BLOCKS;
+}
+
+/* High level compression functions: */
+/* tdefl_compress_mem_to_heap() compresses a block in memory to a heap block allocated via malloc(). */
+/* On entry: */
+/*  pSrc_buf, src_buf_len: Pointer and size of source block to compress. */
+/*  flags: The max match finder probes (default is 128) logically OR'd against the above flags. Higher probes are slower but improve compression. */
+/* On return: */
+/*  Function returns a pointer to the compressed data, or NULL on failure. */
+/*  *pOut_len will be set to the compressed data's size, which could be larger than src_buf_len on uncompressible data. */
+/*  The caller must free() the returned block when it's no longer needed. */
+tdefl_compress_mem_to_heap :: (pSrc_buf: *void, src_buf_len: size_t, pOut_len: *size_t, flags: s32) -> *void #foreign minizlib;
+
+/* tdefl_compress_mem_to_mem() compresses a block in memory to another block in memory. */
+/* Returns 0 on failure. */
+tdefl_compress_mem_to_mem :: (pOut_buf: *void, out_buf_len: size_t, pSrc_buf: *void, src_buf_len: size_t, flags: s32) -> size_t #foreign minizlib;
+
+/* Compresses an image to a compressed PNG file in memory. */
+/* On entry: */
+/*  pImage, w, h, and num_chans describe the image to compress. num_chans may be 1, 2, 3, or 4. */
+/*  The image pitch in bytes per scanline will be w*num_chans. The leftmost pixel on the top scanline is stored first in memory. */
+/*  level may range from [0,10], use MZ_NO_COMPRESSION, MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc. or a decent default is MZ_DEFAULT_LEVEL */
+/*  If flip is true, the image will be flipped on the Y axis (useful for OpenGL apps). */
+/* On return: */
+/*  Function returns a pointer to the compressed data, or NULL on failure. */
+/*  *pLen_out will be set to the size of the PNG image file. */
+/*  The caller must mz_free() the returned heap block (which will typically be larger than *pLen_out) when it's no longer needed. */
+tdefl_write_image_to_png_file_in_memory_ex :: (pImage: *void, w: s32, h: s32, num_chans: s32, pLen_out: *size_t, level: mz_uint, flip: mz_bool) -> *void #foreign minizlib;
+tdefl_write_image_to_png_file_in_memory :: (pImage: *void, w: s32, h: s32, num_chans: s32, pLen_out: *size_t) -> *void #foreign minizlib;
+
+/* Output stream interface. The compressor uses this interface to write compressed data. It'll typically be called TDEFL_OUT_BUF_SIZE at a time. */
+tdefl_put_buf_func_ptr :: #type (a0: *void, a1: s32, a2: *void) -> mz_bool #c_call;
+
+/* tdefl_compress_mem_to_output() compresses a block to an output stream. The above helpers use this function internally. */
+tdefl_compress_mem_to_output :: (pBuf: *void, buf_len: size_t, pPut_buf_func: tdefl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> mz_bool #foreign minizlib;
+
+TDEFL_2 :: enum s32 {
+    MAX_HUFF_TABLES    :: 3;
+    MAX_HUFF_SYMBOLS_0 :: 288;
+    MAX_HUFF_SYMBOLS_1 :: 32;
+    MAX_HUFF_SYMBOLS_2 :: 19;
+    LZ_DICT_SIZE       :: 32768;
+    LZ_DICT_SIZE_MASK  :: 32767;
+    MIN_MATCH_LEN      :: 3;
+    MAX_MATCH_LEN      :: 258;
+
+    TDEFL_MAX_HUFF_TABLES    :: MAX_HUFF_TABLES;
+    TDEFL_MAX_HUFF_SYMBOLS_0 :: MAX_HUFF_SYMBOLS_0;
+    TDEFL_MAX_HUFF_SYMBOLS_1 :: MAX_HUFF_SYMBOLS_1;
+    TDEFL_MAX_HUFF_SYMBOLS_2 :: MAX_HUFF_SYMBOLS_2;
+    TDEFL_LZ_DICT_SIZE       :: LZ_DICT_SIZE;
+    TDEFL_LZ_DICT_SIZE_MASK  :: LZ_DICT_SIZE_MASK;
+    TDEFL_MIN_MATCH_LEN      :: MIN_MATCH_LEN;
+    TDEFL_MAX_MATCH_LEN      :: MAX_MATCH_LEN;
+}
+
+TDEFL_3 :: enum s32 {
+    LZ_CODE_BUF_SIZE      :: 65536;
+    OUT_BUF_SIZE          :: 85196;
+    MAX_HUFF_SYMBOLS      :: 288;
+    LZ_HASH_BITS          :: 15;
+    LEVEL1_HASH_SIZE_MASK :: 4095;
+    LZ_HASH_SHIFT         :: 5;
+    LZ_HASH_SIZE          :: 32768;
+
+    TDEFL_LZ_CODE_BUF_SIZE      :: LZ_CODE_BUF_SIZE;
+    TDEFL_OUT_BUF_SIZE          :: OUT_BUF_SIZE;
+    TDEFL_MAX_HUFF_SYMBOLS      :: MAX_HUFF_SYMBOLS;
+    TDEFL_LZ_HASH_BITS          :: LZ_HASH_BITS;
+    TDEFL_LEVEL1_HASH_SIZE_MASK :: LEVEL1_HASH_SIZE_MASK;
+    TDEFL_LZ_HASH_SHIFT         :: LZ_HASH_SHIFT;
+    TDEFL_LZ_HASH_SIZE          :: LZ_HASH_SIZE;
+}
+
+/* The low-level tdefl functions below may be used directly if the above helper functions aren't flexible enough. The low-level functions don't make any heap allocations, unlike the above helper functions. */
+tdefl_status :: enum s32 {
+    BAD_PARAM      :: -2;
+    PUT_BUF_FAILED :: -1;
+    OKAY           :: 0;
+    DONE           :: 1;
+
+    TDEFL_STATUS_BAD_PARAM      :: BAD_PARAM;
+    TDEFL_STATUS_PUT_BUF_FAILED :: PUT_BUF_FAILED;
+    TDEFL_STATUS_OKAY           :: OKAY;
+    TDEFL_STATUS_DONE           :: DONE;
+}
+
+/* Must map to MZ_NO_FLUSH, MZ_SYNC_FLUSH, etc. enums */
+tdefl_flush :: enum s32 {
+    NO_FLUSH   :: 0;
+    SYNC_FLUSH :: 2;
+    FULL_FLUSH :: 3;
+    FINISH     :: 4;
+
+    TDEFL_NO_FLUSH   :: NO_FLUSH;
+    TDEFL_SYNC_FLUSH :: SYNC_FLUSH;
+    TDEFL_FULL_FLUSH :: FULL_FLUSH;
+    TDEFL_FINISH     :: FINISH;
+}
+
+/* tdefl's compression state structure. */
+tdefl_compressor :: struct {
+    m_pPut_buf_func:          tdefl_put_buf_func_ptr;
+    m_pPut_buf_user:          *void;
+    m_flags:                  mz_uint;
+    m_max_probes:             [2] mz_uint;
+    m_greedy_parsing:         s32;
+    m_adler32:                mz_uint;
+    m_lookahead_pos:          mz_uint;
+    m_lookahead_size:         mz_uint;
+    m_dict_size:              mz_uint;
+    m_pLZ_code_buf:           *mz_uint8;
+    m_pLZ_flags:              *mz_uint8;
+    m_pOutput_buf:            *mz_uint8;
+    m_pOutput_buf_end:        *mz_uint8;
+    m_num_flags_left:         mz_uint;
+    m_total_lz_bytes:         mz_uint;
+    m_lz_code_buf_dict_pos:   mz_uint;
+    m_bits_in:                mz_uint;
+    m_bit_buffer:             mz_uint;
+    m_saved_match_dist:       mz_uint;
+    m_saved_match_len:        mz_uint;
+    m_saved_lit:              mz_uint;
+    m_output_flush_ofs:       mz_uint;
+    m_output_flush_remaining: mz_uint;
+    m_finished:               mz_uint;
+    m_block_index:            mz_uint;
+    m_wants_to_finish:        mz_uint;
+    m_prev_return_status:     tdefl_status;
+    m_pIn_buf:                *void;
+    m_pOut_buf:               *void;
+    m_pIn_buf_size:           *size_t;
+    m_pOut_buf_size:          *size_t;
+    m_flush:                  tdefl_flush;
+    m_pSrc:                   *mz_uint8;
+    m_src_buf_left:           size_t;
+    m_out_buf_ofs:            size_t;
+    m_dict:                   [33025] mz_uint8;
+    m_huff_count:             [3] [288] mz_uint16;
+    m_huff_codes:             [3] [288] mz_uint16;
+    m_huff_code_sizes:        [3] [288] mz_uint8;
+    m_lz_code_buf:            [65536] mz_uint8;
+    m_next:                   [32768] mz_uint16;
+    m_hash:                   [32768] mz_uint16;
+    m_output_buf:             [85196] mz_uint8;
+}
+#run {
+    instance: tdefl_compressor;
+    assert(((cast(*void)(*instance.m_pPut_buf_func)) - cast(*void)(*instance)) == 0, "tdefl_compressor.m_pPut_buf_func has unexpected offset % instead of 0", ((cast(*void)(*instance.m_pPut_buf_func)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pPut_buf_func)) == 8, "tdefl_compressor.m_pPut_buf_func has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pPut_buf_func)));
+    assert(((cast(*void)(*instance.m_pPut_buf_user)) - cast(*void)(*instance)) == 8, "tdefl_compressor.m_pPut_buf_user has unexpected offset % instead of 8", ((cast(*void)(*instance.m_pPut_buf_user)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pPut_buf_user)) == 8, "tdefl_compressor.m_pPut_buf_user has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pPut_buf_user)));
+    assert(((cast(*void)(*instance.m_flags)) - cast(*void)(*instance)) == 16, "tdefl_compressor.m_flags has unexpected offset % instead of 16", ((cast(*void)(*instance.m_flags)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_flags)) == 4, "tdefl_compressor.m_flags has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_flags)));
+    assert(((cast(*void)(*instance.m_max_probes)) - cast(*void)(*instance)) == 20, "tdefl_compressor.m_max_probes has unexpected offset % instead of 20", ((cast(*void)(*instance.m_max_probes)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_max_probes)) == 8, "tdefl_compressor.m_max_probes has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_max_probes)));
+    assert(((cast(*void)(*instance.m_greedy_parsing)) - cast(*void)(*instance)) == 28, "tdefl_compressor.m_greedy_parsing has unexpected offset % instead of 28", ((cast(*void)(*instance.m_greedy_parsing)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_greedy_parsing)) == 4, "tdefl_compressor.m_greedy_parsing has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_greedy_parsing)));
+    assert(((cast(*void)(*instance.m_adler32)) - cast(*void)(*instance)) == 32, "tdefl_compressor.m_adler32 has unexpected offset % instead of 32", ((cast(*void)(*instance.m_adler32)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_adler32)) == 4, "tdefl_compressor.m_adler32 has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_adler32)));
+    assert(((cast(*void)(*instance.m_lookahead_pos)) - cast(*void)(*instance)) == 36, "tdefl_compressor.m_lookahead_pos has unexpected offset % instead of 36", ((cast(*void)(*instance.m_lookahead_pos)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_lookahead_pos)) == 4, "tdefl_compressor.m_lookahead_pos has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_lookahead_pos)));
+    assert(((cast(*void)(*instance.m_lookahead_size)) - cast(*void)(*instance)) == 40, "tdefl_compressor.m_lookahead_size has unexpected offset % instead of 40", ((cast(*void)(*instance.m_lookahead_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_lookahead_size)) == 4, "tdefl_compressor.m_lookahead_size has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_lookahead_size)));
+    assert(((cast(*void)(*instance.m_dict_size)) - cast(*void)(*instance)) == 44, "tdefl_compressor.m_dict_size has unexpected offset % instead of 44", ((cast(*void)(*instance.m_dict_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_dict_size)) == 4, "tdefl_compressor.m_dict_size has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_dict_size)));
+    assert(((cast(*void)(*instance.m_pLZ_code_buf)) - cast(*void)(*instance)) == 48, "tdefl_compressor.m_pLZ_code_buf has unexpected offset % instead of 48", ((cast(*void)(*instance.m_pLZ_code_buf)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pLZ_code_buf)) == 8, "tdefl_compressor.m_pLZ_code_buf has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pLZ_code_buf)));
+    assert(((cast(*void)(*instance.m_pLZ_flags)) - cast(*void)(*instance)) == 56, "tdefl_compressor.m_pLZ_flags has unexpected offset % instead of 56", ((cast(*void)(*instance.m_pLZ_flags)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pLZ_flags)) == 8, "tdefl_compressor.m_pLZ_flags has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pLZ_flags)));
+    assert(((cast(*void)(*instance.m_pOutput_buf)) - cast(*void)(*instance)) == 64, "tdefl_compressor.m_pOutput_buf has unexpected offset % instead of 64", ((cast(*void)(*instance.m_pOutput_buf)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pOutput_buf)) == 8, "tdefl_compressor.m_pOutput_buf has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pOutput_buf)));
+    assert(((cast(*void)(*instance.m_pOutput_buf_end)) - cast(*void)(*instance)) == 72, "tdefl_compressor.m_pOutput_buf_end has unexpected offset % instead of 72", ((cast(*void)(*instance.m_pOutput_buf_end)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pOutput_buf_end)) == 8, "tdefl_compressor.m_pOutput_buf_end has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pOutput_buf_end)));
+    assert(((cast(*void)(*instance.m_num_flags_left)) - cast(*void)(*instance)) == 80, "tdefl_compressor.m_num_flags_left has unexpected offset % instead of 80", ((cast(*void)(*instance.m_num_flags_left)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_num_flags_left)) == 4, "tdefl_compressor.m_num_flags_left has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_num_flags_left)));
+    assert(((cast(*void)(*instance.m_total_lz_bytes)) - cast(*void)(*instance)) == 84, "tdefl_compressor.m_total_lz_bytes has unexpected offset % instead of 84", ((cast(*void)(*instance.m_total_lz_bytes)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_total_lz_bytes)) == 4, "tdefl_compressor.m_total_lz_bytes has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_total_lz_bytes)));
+    assert(((cast(*void)(*instance.m_lz_code_buf_dict_pos)) - cast(*void)(*instance)) == 88, "tdefl_compressor.m_lz_code_buf_dict_pos has unexpected offset % instead of 88", ((cast(*void)(*instance.m_lz_code_buf_dict_pos)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_lz_code_buf_dict_pos)) == 4, "tdefl_compressor.m_lz_code_buf_dict_pos has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_lz_code_buf_dict_pos)));
+    assert(((cast(*void)(*instance.m_bits_in)) - cast(*void)(*instance)) == 92, "tdefl_compressor.m_bits_in has unexpected offset % instead of 92", ((cast(*void)(*instance.m_bits_in)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_bits_in)) == 4, "tdefl_compressor.m_bits_in has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_bits_in)));
+    assert(((cast(*void)(*instance.m_bit_buffer)) - cast(*void)(*instance)) == 96, "tdefl_compressor.m_bit_buffer has unexpected offset % instead of 96", ((cast(*void)(*instance.m_bit_buffer)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_bit_buffer)) == 4, "tdefl_compressor.m_bit_buffer has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_bit_buffer)));
+    assert(((cast(*void)(*instance.m_saved_match_dist)) - cast(*void)(*instance)) == 100, "tdefl_compressor.m_saved_match_dist has unexpected offset % instead of 100", ((cast(*void)(*instance.m_saved_match_dist)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_saved_match_dist)) == 4, "tdefl_compressor.m_saved_match_dist has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_saved_match_dist)));
+    assert(((cast(*void)(*instance.m_saved_match_len)) - cast(*void)(*instance)) == 104, "tdefl_compressor.m_saved_match_len has unexpected offset % instead of 104", ((cast(*void)(*instance.m_saved_match_len)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_saved_match_len)) == 4, "tdefl_compressor.m_saved_match_len has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_saved_match_len)));
+    assert(((cast(*void)(*instance.m_saved_lit)) - cast(*void)(*instance)) == 108, "tdefl_compressor.m_saved_lit has unexpected offset % instead of 108", ((cast(*void)(*instance.m_saved_lit)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_saved_lit)) == 4, "tdefl_compressor.m_saved_lit has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_saved_lit)));
+    assert(((cast(*void)(*instance.m_output_flush_ofs)) - cast(*void)(*instance)) == 112, "tdefl_compressor.m_output_flush_ofs has unexpected offset % instead of 112", ((cast(*void)(*instance.m_output_flush_ofs)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_output_flush_ofs)) == 4, "tdefl_compressor.m_output_flush_ofs has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_output_flush_ofs)));
+    assert(((cast(*void)(*instance.m_output_flush_remaining)) - cast(*void)(*instance)) == 116, "tdefl_compressor.m_output_flush_remaining has unexpected offset % instead of 116", ((cast(*void)(*instance.m_output_flush_remaining)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_output_flush_remaining)) == 4, "tdefl_compressor.m_output_flush_remaining has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_output_flush_remaining)));
+    assert(((cast(*void)(*instance.m_finished)) - cast(*void)(*instance)) == 120, "tdefl_compressor.m_finished has unexpected offset % instead of 120", ((cast(*void)(*instance.m_finished)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_finished)) == 4, "tdefl_compressor.m_finished has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_finished)));
+    assert(((cast(*void)(*instance.m_block_index)) - cast(*void)(*instance)) == 124, "tdefl_compressor.m_block_index has unexpected offset % instead of 124", ((cast(*void)(*instance.m_block_index)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_block_index)) == 4, "tdefl_compressor.m_block_index has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_block_index)));
+    assert(((cast(*void)(*instance.m_wants_to_finish)) - cast(*void)(*instance)) == 128, "tdefl_compressor.m_wants_to_finish has unexpected offset % instead of 128", ((cast(*void)(*instance.m_wants_to_finish)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_wants_to_finish)) == 4, "tdefl_compressor.m_wants_to_finish has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_wants_to_finish)));
+    assert(((cast(*void)(*instance.m_prev_return_status)) - cast(*void)(*instance)) == 132, "tdefl_compressor.m_prev_return_status has unexpected offset % instead of 132", ((cast(*void)(*instance.m_prev_return_status)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_prev_return_status)) == 4, "tdefl_compressor.m_prev_return_status has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_prev_return_status)));
+    assert(((cast(*void)(*instance.m_pIn_buf)) - cast(*void)(*instance)) == 136, "tdefl_compressor.m_pIn_buf has unexpected offset % instead of 136", ((cast(*void)(*instance.m_pIn_buf)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pIn_buf)) == 8, "tdefl_compressor.m_pIn_buf has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pIn_buf)));
+    assert(((cast(*void)(*instance.m_pOut_buf)) - cast(*void)(*instance)) == 144, "tdefl_compressor.m_pOut_buf has unexpected offset % instead of 144", ((cast(*void)(*instance.m_pOut_buf)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pOut_buf)) == 8, "tdefl_compressor.m_pOut_buf has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pOut_buf)));
+    assert(((cast(*void)(*instance.m_pIn_buf_size)) - cast(*void)(*instance)) == 152, "tdefl_compressor.m_pIn_buf_size has unexpected offset % instead of 152", ((cast(*void)(*instance.m_pIn_buf_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pIn_buf_size)) == 8, "tdefl_compressor.m_pIn_buf_size has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pIn_buf_size)));
+    assert(((cast(*void)(*instance.m_pOut_buf_size)) - cast(*void)(*instance)) == 160, "tdefl_compressor.m_pOut_buf_size has unexpected offset % instead of 160", ((cast(*void)(*instance.m_pOut_buf_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pOut_buf_size)) == 8, "tdefl_compressor.m_pOut_buf_size has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pOut_buf_size)));
+    assert(((cast(*void)(*instance.m_flush)) - cast(*void)(*instance)) == 168, "tdefl_compressor.m_flush has unexpected offset % instead of 168", ((cast(*void)(*instance.m_flush)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_flush)) == 4, "tdefl_compressor.m_flush has unexpected size % instead of 4", size_of(type_of(tdefl_compressor.m_flush)));
+    assert(((cast(*void)(*instance.m_pSrc)) - cast(*void)(*instance)) == 176, "tdefl_compressor.m_pSrc has unexpected offset % instead of 176", ((cast(*void)(*instance.m_pSrc)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_pSrc)) == 8, "tdefl_compressor.m_pSrc has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_pSrc)));
+    assert(((cast(*void)(*instance.m_src_buf_left)) - cast(*void)(*instance)) == 184, "tdefl_compressor.m_src_buf_left has unexpected offset % instead of 184", ((cast(*void)(*instance.m_src_buf_left)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_src_buf_left)) == 8, "tdefl_compressor.m_src_buf_left has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_src_buf_left)));
+    assert(((cast(*void)(*instance.m_out_buf_ofs)) - cast(*void)(*instance)) == 192, "tdefl_compressor.m_out_buf_ofs has unexpected offset % instead of 192", ((cast(*void)(*instance.m_out_buf_ofs)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_out_buf_ofs)) == 8, "tdefl_compressor.m_out_buf_ofs has unexpected size % instead of 8", size_of(type_of(tdefl_compressor.m_out_buf_ofs)));
+    assert(((cast(*void)(*instance.m_dict)) - cast(*void)(*instance)) == 200, "tdefl_compressor.m_dict has unexpected offset % instead of 200", ((cast(*void)(*instance.m_dict)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_dict)) == 33025, "tdefl_compressor.m_dict has unexpected size % instead of 33025", size_of(type_of(tdefl_compressor.m_dict)));
+    assert(((cast(*void)(*instance.m_huff_count)) - cast(*void)(*instance)) == 33226, "tdefl_compressor.m_huff_count has unexpected offset % instead of 33226", ((cast(*void)(*instance.m_huff_count)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_huff_count)) == 1728, "tdefl_compressor.m_huff_count has unexpected size % instead of 1728", size_of(type_of(tdefl_compressor.m_huff_count)));
+    assert(((cast(*void)(*instance.m_huff_codes)) - cast(*void)(*instance)) == 34954, "tdefl_compressor.m_huff_codes has unexpected offset % instead of 34954", ((cast(*void)(*instance.m_huff_codes)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_huff_codes)) == 1728, "tdefl_compressor.m_huff_codes has unexpected size % instead of 1728", size_of(type_of(tdefl_compressor.m_huff_codes)));
+    assert(((cast(*void)(*instance.m_huff_code_sizes)) - cast(*void)(*instance)) == 36682, "tdefl_compressor.m_huff_code_sizes has unexpected offset % instead of 36682", ((cast(*void)(*instance.m_huff_code_sizes)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_huff_code_sizes)) == 864, "tdefl_compressor.m_huff_code_sizes has unexpected size % instead of 864", size_of(type_of(tdefl_compressor.m_huff_code_sizes)));
+    assert(((cast(*void)(*instance.m_lz_code_buf)) - cast(*void)(*instance)) == 37546, "tdefl_compressor.m_lz_code_buf has unexpected offset % instead of 37546", ((cast(*void)(*instance.m_lz_code_buf)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_lz_code_buf)) == 65536, "tdefl_compressor.m_lz_code_buf has unexpected size % instead of 65536", size_of(type_of(tdefl_compressor.m_lz_code_buf)));
+    assert(((cast(*void)(*instance.m_next)) - cast(*void)(*instance)) == 103082, "tdefl_compressor.m_next has unexpected offset % instead of 103082", ((cast(*void)(*instance.m_next)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_next)) == 65536, "tdefl_compressor.m_next has unexpected size % instead of 65536", size_of(type_of(tdefl_compressor.m_next)));
+    assert(((cast(*void)(*instance.m_hash)) - cast(*void)(*instance)) == 168618, "tdefl_compressor.m_hash has unexpected offset % instead of 168618", ((cast(*void)(*instance.m_hash)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_hash)) == 65536, "tdefl_compressor.m_hash has unexpected size % instead of 65536", size_of(type_of(tdefl_compressor.m_hash)));
+    assert(((cast(*void)(*instance.m_output_buf)) - cast(*void)(*instance)) == 234154, "tdefl_compressor.m_output_buf has unexpected offset % instead of 234154", ((cast(*void)(*instance.m_output_buf)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tdefl_compressor.m_output_buf)) == 85196, "tdefl_compressor.m_output_buf has unexpected size % instead of 85196", size_of(type_of(tdefl_compressor.m_output_buf)));
+    assert(size_of(tdefl_compressor) == 319352, "tdefl_compressor has size % instead of 319352", size_of(tdefl_compressor));
+}
+
+/* Initializes the compressor. */
+/* There is no corresponding deinit() function because the tdefl API's do not dynamically allocate memory. */
+/* pBut_buf_func: If NULL, output data will be supplied to the specified callback. In this case, the user should call the tdefl_compress_buffer() API for compression. */
+/* If pBut_buf_func is NULL the user should always call the tdefl_compress() API. */
+/* flags: See the above enums (TDEFL_HUFFMAN_ONLY, TDEFL_WRITE_ZLIB_HEADER, etc.) */
+tdefl_init :: (d: *tdefl_compressor, pPut_buf_func: tdefl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> tdefl_status #foreign minizlib;
+
+/* Compresses a block of data, consuming as much of the specified input buffer as possible, and writing as much compressed data to the specified output buffer as possible. */
+tdefl_compress :: (d: *tdefl_compressor, pIn_buf: *void, pIn_buf_size: *size_t, pOut_buf: *void, pOut_buf_size: *size_t, flush: tdefl_flush) -> tdefl_status #foreign minizlib;
+
+/* tdefl_compress_buffer() is only usable when the tdefl_init() is called with a non-NULL tdefl_put_buf_func_ptr. */
+/* tdefl_compress_buffer() always consumes the entire input buffer. */
+tdefl_compress_buffer :: (d: *tdefl_compressor, pIn_buf: *void, in_buf_size: size_t, flush: tdefl_flush) -> tdefl_status #foreign minizlib;
+
+tdefl_get_prev_return_status :: (d: *tdefl_compressor) -> tdefl_status #foreign minizlib;
+tdefl_get_adler32 :: (d: *tdefl_compressor) -> mz_uint32 #foreign minizlib;
+
+/* Create tdefl_compress() flags given zlib-style compression parameters. */
+/* level may range from [0,10] (where 10 is absolute max compression, but may be much slower on some files) */
+/* window_bits may be -15 (raw deflate) or 15 (zlib) */
+/* strategy may be either MZ_DEFAULT_STRATEGY, MZ_FILTERED, MZ_HUFFMAN_ONLY, MZ_RLE, or MZ_FIXED */
+tdefl_create_comp_flags_from_zip_params :: (level: s32, window_bits: s32, strategy: s32) -> mz_uint #foreign minizlib;
+
+/* Allocate the tdefl_compressor structure in C so that */
+/* non-C language bindings to tdefl_ API don't need to worry about */
+/* structure size and allocation mechanism. */
+tdefl_compressor_alloc :: () -> *tdefl_compressor #foreign minizlib;
+tdefl_compressor_free :: (pComp: *tdefl_compressor) -> void #foreign minizlib;
+
+/* Decompression flags used by tinfl_decompress(). */
+/* TINFL_FLAG_PARSE_ZLIB_HEADER: If set, the input has a valid zlib header and ends with an adler32 checksum (it's a valid zlib stream). Otherwise, the input is a raw deflate stream. */
+/* TINFL_FLAG_HAS_MORE_INPUT: If set, there are more input bytes available beyond the end of the supplied input buffer. If clear, the input buffer contains all remaining input. */
+/* TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF: If set, the output buffer is large enough to hold the entire decompressed stream. If clear, the output buffer is at least the size of the dictionary (typically 32KB). */
+/* TINFL_FLAG_COMPUTE_ADLER32: Force adler-32 checksum computation of the decompressed bytes. */
+TINFL_FLAG :: enum s32 {
+    PARSE_ZLIB_HEADER             :: 1;
+    HAS_MORE_INPUT                :: 2;
+    USING_NON_WRAPPING_OUTPUT_BUF :: 4;
+    COMPUTE_ADLER32               :: 8;
+
+    TINFL_FLAG_PARSE_ZLIB_HEADER             :: PARSE_ZLIB_HEADER;
+    TINFL_FLAG_HAS_MORE_INPUT                :: HAS_MORE_INPUT;
+    TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF :: USING_NON_WRAPPING_OUTPUT_BUF;
+    TINFL_FLAG_COMPUTE_ADLER32               :: COMPUTE_ADLER32;
+}
+
+/* High level decompression functions: */
+/* tinfl_decompress_mem_to_heap() decompresses a block in memory to a heap block allocated via malloc(). */
+/* On entry: */
+/*  pSrc_buf, src_buf_len: Pointer and size of the Deflate or zlib source data to decompress. */
+/* On return: */
+/*  Function returns a pointer to the decompressed data, or NULL on failure. */
+/*  *pOut_len will be set to the decompressed data's size, which could be larger than src_buf_len on uncompressible data. */
+/*  The caller must call mz_free() on the returned block when it's no longer needed. */
+tinfl_decompress_mem_to_heap :: (pSrc_buf: *void, src_buf_len: size_t, pOut_len: *size_t, flags: s32) -> *void #foreign minizlib;
+
+tinfl_decompress_mem_to_mem :: (pOut_buf: *void, out_buf_len: size_t, pSrc_buf: *void, src_buf_len: size_t, flags: s32) -> size_t #foreign minizlib;
+
+/* tinfl_decompress_mem_to_callback() decompresses a block in memory to an internal 32KB buffer, and a user provided callback function will be called to flush the buffer. */
+/* Returns 1 on success or 0 on failure. */
+tinfl_put_buf_func_ptr :: #type (a0: *void, a1: s32, a2: *void) -> s32 #c_call;
+tinfl_decompress_mem_to_callback :: (pIn_buf: *void, pIn_buf_size: *size_t, pPut_buf_func: tinfl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> s32 #foreign minizlib;
+
+tinfl_decompressor :: tinfl_decompressor_tag;
+
+/* Allocate the tinfl_decompressor structure in C so that */
+/* non-C language bindings to tinfl_ API don't need to worry about */
+/* structure size and allocation mechanism. */
+tinfl_decompressor_alloc :: () -> *tinfl_decompressor #foreign minizlib;
+tinfl_decompressor_free :: (pDecomp: *tinfl_decompressor) -> void #foreign minizlib;
+
+/* Return status. */
+tinfl_status :: enum s32 {
+    FAILED_CANNOT_MAKE_PROGRESS :: -4;
+
+    BAD_PARAM                   :: -3;
+
+    ADLER32_MISMATCH            :: -2;
+
+    FAILED                      :: -1;
+
+    DONE                        :: 0;
+
+    NEEDS_MORE_INPUT            :: 1;
+
+    HAS_MORE_OUTPUT             :: 2;
+
+    TINFL_STATUS_FAILED_CANNOT_MAKE_PROGRESS :: FAILED_CANNOT_MAKE_PROGRESS;
+
+    TINFL_STATUS_BAD_PARAM                   :: BAD_PARAM;
+
+    TINFL_STATUS_ADLER32_MISMATCH            :: ADLER32_MISMATCH;
+
+    TINFL_STATUS_FAILED                      :: FAILED;
+
+    TINFL_STATUS_DONE                        :: DONE;
+
+    TINFL_STATUS_NEEDS_MORE_INPUT            :: NEEDS_MORE_INPUT;
+
+    TINFL_STATUS_HAS_MORE_OUTPUT             :: HAS_MORE_OUTPUT;
+}
+
+/* Main low-level decompressor coroutine function. This is the only function actually needed for decompression. All the other functions are just high-level helpers for improved usability. */
+/* This is a universal API, i.e. it can be used as a building block to build any desired higher level decompression API. In the limit case, it can be called once per every byte input or output. */
+tinfl_decompress :: (r: *tinfl_decompressor, pIn_buf_next: *mz_uint8, pIn_buf_size: *size_t, pOut_buf_start: *mz_uint8, pOut_buf_next: *mz_uint8, pOut_buf_size: *size_t, decomp_flags: mz_uint32) -> tinfl_status #foreign minizlib;
+
+/* Internal/private bits follow. */
+TINFL :: enum s32 {
+    MAX_HUFF_TABLES    :: 3;
+    MAX_HUFF_SYMBOLS_0 :: 288;
+    MAX_HUFF_SYMBOLS_1 :: 32;
+    MAX_HUFF_SYMBOLS_2 :: 19;
+    FAST_LOOKUP_BITS   :: 10;
+    FAST_LOOKUP_SIZE   :: 1024;
+
+    TINFL_MAX_HUFF_TABLES    :: MAX_HUFF_TABLES;
+    TINFL_MAX_HUFF_SYMBOLS_0 :: MAX_HUFF_SYMBOLS_0;
+    TINFL_MAX_HUFF_SYMBOLS_1 :: MAX_HUFF_SYMBOLS_1;
+    TINFL_MAX_HUFF_SYMBOLS_2 :: MAX_HUFF_SYMBOLS_2;
+    TINFL_FAST_LOOKUP_BITS   :: FAST_LOOKUP_BITS;
+    TINFL_FAST_LOOKUP_SIZE   :: FAST_LOOKUP_SIZE;
+}
+
+tinfl_huff_table :: struct {
+    m_code_size: [288] mz_uint8;
+    m_look_up:   [1024] mz_int16;
+    m_tree:      [576] mz_int16;
+}
+#run {
+    instance: tinfl_huff_table;
+    assert(((cast(*void)(*instance.m_code_size)) - cast(*void)(*instance)) == 0, "tinfl_huff_table.m_code_size has unexpected offset % instead of 0", ((cast(*void)(*instance.m_code_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_huff_table.m_code_size)) == 288, "tinfl_huff_table.m_code_size has unexpected size % instead of 288", size_of(type_of(tinfl_huff_table.m_code_size)));
+    assert(((cast(*void)(*instance.m_look_up)) - cast(*void)(*instance)) == 288, "tinfl_huff_table.m_look_up has unexpected offset % instead of 288", ((cast(*void)(*instance.m_look_up)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_huff_table.m_look_up)) == 2048, "tinfl_huff_table.m_look_up has unexpected size % instead of 2048", size_of(type_of(tinfl_huff_table.m_look_up)));
+    assert(((cast(*void)(*instance.m_tree)) - cast(*void)(*instance)) == 2336, "tinfl_huff_table.m_tree has unexpected offset % instead of 2336", ((cast(*void)(*instance.m_tree)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_huff_table.m_tree)) == 1152, "tinfl_huff_table.m_tree has unexpected size % instead of 1152", size_of(type_of(tinfl_huff_table.m_tree)));
+    assert(size_of(tinfl_huff_table) == 3488, "tinfl_huff_table has size % instead of 3488", size_of(tinfl_huff_table));
+}
+
+tinfl_bit_buf_t :: mz_uint64;
+
+tinfl_decompressor_tag :: struct {
+    m_state:                   mz_uint32;
+    m_num_bits:                mz_uint32;
+    m_zhdr0:                   mz_uint32;
+    m_zhdr1:                   mz_uint32;
+    m_z_adler32:               mz_uint32;
+    m_final:                   mz_uint32;
+    m_type:                    mz_uint32;
+    m_check_adler32:           mz_uint32;
+    m_dist:                    mz_uint32;
+    m_counter:                 mz_uint32;
+    m_num_extra:               mz_uint32;
+    m_table_sizes:             [3] mz_uint32;
+    m_bit_buf:                 tinfl_bit_buf_t;
+    m_dist_from_out_buf_start: size_t;
+    m_tables:                  [3] tinfl_huff_table;
+    m_raw_header:              [4] mz_uint8;
+    m_len_codes:               [457] mz_uint8;
+}
+#run {
+    instance: tinfl_decompressor_tag;
+    assert(((cast(*void)(*instance.m_state)) - cast(*void)(*instance)) == 0, "tinfl_decompressor_tag.m_state has unexpected offset % instead of 0", ((cast(*void)(*instance.m_state)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_state)) == 4, "tinfl_decompressor_tag.m_state has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_state)));
+    assert(((cast(*void)(*instance.m_num_bits)) - cast(*void)(*instance)) == 4, "tinfl_decompressor_tag.m_num_bits has unexpected offset % instead of 4", ((cast(*void)(*instance.m_num_bits)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_num_bits)) == 4, "tinfl_decompressor_tag.m_num_bits has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_num_bits)));
+    assert(((cast(*void)(*instance.m_zhdr0)) - cast(*void)(*instance)) == 8, "tinfl_decompressor_tag.m_zhdr0 has unexpected offset % instead of 8", ((cast(*void)(*instance.m_zhdr0)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_zhdr0)) == 4, "tinfl_decompressor_tag.m_zhdr0 has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_zhdr0)));
+    assert(((cast(*void)(*instance.m_zhdr1)) - cast(*void)(*instance)) == 12, "tinfl_decompressor_tag.m_zhdr1 has unexpected offset % instead of 12", ((cast(*void)(*instance.m_zhdr1)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_zhdr1)) == 4, "tinfl_decompressor_tag.m_zhdr1 has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_zhdr1)));
+    assert(((cast(*void)(*instance.m_z_adler32)) - cast(*void)(*instance)) == 16, "tinfl_decompressor_tag.m_z_adler32 has unexpected offset % instead of 16", ((cast(*void)(*instance.m_z_adler32)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_z_adler32)) == 4, "tinfl_decompressor_tag.m_z_adler32 has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_z_adler32)));
+    assert(((cast(*void)(*instance.m_final)) - cast(*void)(*instance)) == 20, "tinfl_decompressor_tag.m_final has unexpected offset % instead of 20", ((cast(*void)(*instance.m_final)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_final)) == 4, "tinfl_decompressor_tag.m_final has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_final)));
+    assert(((cast(*void)(*instance.m_type)) - cast(*void)(*instance)) == 24, "tinfl_decompressor_tag.m_type has unexpected offset % instead of 24", ((cast(*void)(*instance.m_type)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_type)) == 4, "tinfl_decompressor_tag.m_type has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_type)));
+    assert(((cast(*void)(*instance.m_check_adler32)) - cast(*void)(*instance)) == 28, "tinfl_decompressor_tag.m_check_adler32 has unexpected offset % instead of 28", ((cast(*void)(*instance.m_check_adler32)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_check_adler32)) == 4, "tinfl_decompressor_tag.m_check_adler32 has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_check_adler32)));
+    assert(((cast(*void)(*instance.m_dist)) - cast(*void)(*instance)) == 32, "tinfl_decompressor_tag.m_dist has unexpected offset % instead of 32", ((cast(*void)(*instance.m_dist)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_dist)) == 4, "tinfl_decompressor_tag.m_dist has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_dist)));
+    assert(((cast(*void)(*instance.m_counter)) - cast(*void)(*instance)) == 36, "tinfl_decompressor_tag.m_counter has unexpected offset % instead of 36", ((cast(*void)(*instance.m_counter)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_counter)) == 4, "tinfl_decompressor_tag.m_counter has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_counter)));
+    assert(((cast(*void)(*instance.m_num_extra)) - cast(*void)(*instance)) == 40, "tinfl_decompressor_tag.m_num_extra has unexpected offset % instead of 40", ((cast(*void)(*instance.m_num_extra)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_num_extra)) == 4, "tinfl_decompressor_tag.m_num_extra has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_num_extra)));
+    assert(((cast(*void)(*instance.m_table_sizes)) - cast(*void)(*instance)) == 44, "tinfl_decompressor_tag.m_table_sizes has unexpected offset % instead of 44", ((cast(*void)(*instance.m_table_sizes)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_table_sizes)) == 12, "tinfl_decompressor_tag.m_table_sizes has unexpected size % instead of 12", size_of(type_of(tinfl_decompressor_tag.m_table_sizes)));
+    assert(((cast(*void)(*instance.m_bit_buf)) - cast(*void)(*instance)) == 56, "tinfl_decompressor_tag.m_bit_buf has unexpected offset % instead of 56", ((cast(*void)(*instance.m_bit_buf)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_bit_buf)) == 8, "tinfl_decompressor_tag.m_bit_buf has unexpected size % instead of 8", size_of(type_of(tinfl_decompressor_tag.m_bit_buf)));
+    assert(((cast(*void)(*instance.m_dist_from_out_buf_start)) - cast(*void)(*instance)) == 64, "tinfl_decompressor_tag.m_dist_from_out_buf_start has unexpected offset % instead of 64", ((cast(*void)(*instance.m_dist_from_out_buf_start)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_dist_from_out_buf_start)) == 8, "tinfl_decompressor_tag.m_dist_from_out_buf_start has unexpected size % instead of 8", size_of(type_of(tinfl_decompressor_tag.m_dist_from_out_buf_start)));
+    assert(((cast(*void)(*instance.m_tables)) - cast(*void)(*instance)) == 72, "tinfl_decompressor_tag.m_tables has unexpected offset % instead of 72", ((cast(*void)(*instance.m_tables)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_tables)) == 10464, "tinfl_decompressor_tag.m_tables has unexpected size % instead of 10464", size_of(type_of(tinfl_decompressor_tag.m_tables)));
+    assert(((cast(*void)(*instance.m_raw_header)) - cast(*void)(*instance)) == 10536, "tinfl_decompressor_tag.m_raw_header has unexpected offset % instead of 10536", ((cast(*void)(*instance.m_raw_header)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_raw_header)) == 4, "tinfl_decompressor_tag.m_raw_header has unexpected size % instead of 4", size_of(type_of(tinfl_decompressor_tag.m_raw_header)));
+    assert(((cast(*void)(*instance.m_len_codes)) - cast(*void)(*instance)) == 10540, "tinfl_decompressor_tag.m_len_codes has unexpected offset % instead of 10540", ((cast(*void)(*instance.m_len_codes)) - cast(*void)(*instance)));
+    assert(size_of(type_of(tinfl_decompressor_tag.m_len_codes)) == 457, "tinfl_decompressor_tag.m_len_codes has unexpected size % instead of 457", size_of(type_of(tinfl_decompressor_tag.m_len_codes)));
+    assert(size_of(tinfl_decompressor_tag) == 11000, "tinfl_decompressor_tag has size % instead of 11000", size_of(tinfl_decompressor_tag));
+}
+
+MZ_ZIP_MAX :: enum s32 {
+    IO_BUF_SIZE               :: 65536;
+    ARCHIVE_FILENAME_SIZE     :: 512;
+    ARCHIVE_FILE_COMMENT_SIZE :: 512;
+
+    MZ_ZIP_MAX_IO_BUF_SIZE               :: IO_BUF_SIZE;
+    MZ_ZIP_MAX_ARCHIVE_FILENAME_SIZE     :: ARCHIVE_FILENAME_SIZE;
+    MZ_ZIP_MAX_ARCHIVE_FILE_COMMENT_SIZE :: ARCHIVE_FILE_COMMENT_SIZE;
+}
+
+mz_zip_archive_file_stat :: struct {
+    /* Central directory file index. */
+    m_file_index:       mz_uint32;
+
+    /* Byte offset of this entry in the archive's central directory. Note we currently only support up to UINT_MAX or less bytes in the central dir. */
+    m_central_dir_ofs:  mz_uint64;
+
+    /* These fields are copied directly from the zip's central dir. */
+    m_version_made_by:  mz_uint16;
+    m_version_needed:   mz_uint16;
+    m_bit_flag:         mz_uint16;
+    m_method:           mz_uint16;
+
+    m_time:             time_t;
+
+    /* CRC-32 of uncompressed data. */
+    m_crc32:            mz_uint32;
+
+    /* File's compressed size. */
+    m_comp_size:        mz_uint64;
+
+    /* File's uncompressed size. Note, I've seen some old archives where directory entries had 512 bytes for their uncompressed sizes, but when you try to unpack them you actually get 0 bytes. */
+    m_uncomp_size:      mz_uint64;
+
+    /* Zip internal and external file attributes. */
+    m_internal_attr:    mz_uint16;
+    m_external_attr:    mz_uint32;
+
+    /* Entry's local header file offset in bytes. */
+    m_local_header_ofs: mz_uint64;
+
+    /* Size of comment in bytes. */
+    m_comment_size:     mz_uint32;
+
+    /* MZ_TRUE if the entry appears to be a directory. */
+    m_is_directory:     mz_bool;
+
+    /* MZ_TRUE if the entry uses encryption/strong encryption (which miniz_zip doesn't support) */
+    m_is_encrypted:     mz_bool;
+
+    /* MZ_TRUE if the file is not encrypted, a patch file, and if it uses a compression method we support. */
+    m_is_supported:     mz_bool;
+
+    /* Filename. If string ends in '/' it's a subdirectory entry. */
+    /* Guaranteed to be zero terminated, may be truncated to fit. */
+    m_filename:         [512] u8;
+
+    /* Comment field. */
+    /* Guaranteed to be zero terminated, may be truncated to fit. */
+    m_comment:          [512] u8;
+}
+#run {
+    instance: mz_zip_archive_file_stat;
+    assert(((cast(*void)(*instance.m_file_index)) - cast(*void)(*instance)) == 0, "mz_zip_archive_file_stat.m_file_index has unexpected offset % instead of 0", ((cast(*void)(*instance.m_file_index)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_file_index)) == 4, "mz_zip_archive_file_stat.m_file_index has unexpected size % instead of 4", size_of(type_of(mz_zip_archive_file_stat.m_file_index)));
+    assert(((cast(*void)(*instance.m_central_dir_ofs)) - cast(*void)(*instance)) == 8, "mz_zip_archive_file_stat.m_central_dir_ofs has unexpected offset % instead of 8", ((cast(*void)(*instance.m_central_dir_ofs)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_central_dir_ofs)) == 8, "mz_zip_archive_file_stat.m_central_dir_ofs has unexpected size % instead of 8", size_of(type_of(mz_zip_archive_file_stat.m_central_dir_ofs)));
+    assert(((cast(*void)(*instance.m_version_made_by)) - cast(*void)(*instance)) == 16, "mz_zip_archive_file_stat.m_version_made_by has unexpected offset % instead of 16", ((cast(*void)(*instance.m_version_made_by)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_version_made_by)) == 2, "mz_zip_archive_file_stat.m_version_made_by has unexpected size % instead of 2", size_of(type_of(mz_zip_archive_file_stat.m_version_made_by)));
+    assert(((cast(*void)(*instance.m_version_needed)) - cast(*void)(*instance)) == 18, "mz_zip_archive_file_stat.m_version_needed has unexpected offset % instead of 18", ((cast(*void)(*instance.m_version_needed)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_version_needed)) == 2, "mz_zip_archive_file_stat.m_version_needed has unexpected size % instead of 2", size_of(type_of(mz_zip_archive_file_stat.m_version_needed)));
+    assert(((cast(*void)(*instance.m_bit_flag)) - cast(*void)(*instance)) == 20, "mz_zip_archive_file_stat.m_bit_flag has unexpected offset % instead of 20", ((cast(*void)(*instance.m_bit_flag)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_bit_flag)) == 2, "mz_zip_archive_file_stat.m_bit_flag has unexpected size % instead of 2", size_of(type_of(mz_zip_archive_file_stat.m_bit_flag)));
+    assert(((cast(*void)(*instance.m_method)) - cast(*void)(*instance)) == 22, "mz_zip_archive_file_stat.m_method has unexpected offset % instead of 22", ((cast(*void)(*instance.m_method)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_method)) == 2, "mz_zip_archive_file_stat.m_method has unexpected size % instead of 2", size_of(type_of(mz_zip_archive_file_stat.m_method)));
+    assert(((cast(*void)(*instance.m_time)) - cast(*void)(*instance)) == 24, "mz_zip_archive_file_stat.m_time has unexpected offset % instead of 24", ((cast(*void)(*instance.m_time)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_time)) == 8, "mz_zip_archive_file_stat.m_time has unexpected size % instead of 8", size_of(type_of(mz_zip_archive_file_stat.m_time)));
+    assert(((cast(*void)(*instance.m_crc32)) - cast(*void)(*instance)) == 32, "mz_zip_archive_file_stat.m_crc32 has unexpected offset % instead of 32", ((cast(*void)(*instance.m_crc32)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_crc32)) == 4, "mz_zip_archive_file_stat.m_crc32 has unexpected size % instead of 4", size_of(type_of(mz_zip_archive_file_stat.m_crc32)));
+    assert(((cast(*void)(*instance.m_comp_size)) - cast(*void)(*instance)) == 40, "mz_zip_archive_file_stat.m_comp_size has unexpected offset % instead of 40", ((cast(*void)(*instance.m_comp_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_comp_size)) == 8, "mz_zip_archive_file_stat.m_comp_size has unexpected size % instead of 8", size_of(type_of(mz_zip_archive_file_stat.m_comp_size)));
+    assert(((cast(*void)(*instance.m_uncomp_size)) - cast(*void)(*instance)) == 48, "mz_zip_archive_file_stat.m_uncomp_size has unexpected offset % instead of 48", ((cast(*void)(*instance.m_uncomp_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_uncomp_size)) == 8, "mz_zip_archive_file_stat.m_uncomp_size has unexpected size % instead of 8", size_of(type_of(mz_zip_archive_file_stat.m_uncomp_size)));
+    assert(((cast(*void)(*instance.m_internal_attr)) - cast(*void)(*instance)) == 56, "mz_zip_archive_file_stat.m_internal_attr has unexpected offset % instead of 56", ((cast(*void)(*instance.m_internal_attr)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_internal_attr)) == 2, "mz_zip_archive_file_stat.m_internal_attr has unexpected size % instead of 2", size_of(type_of(mz_zip_archive_file_stat.m_internal_attr)));
+    assert(((cast(*void)(*instance.m_external_attr)) - cast(*void)(*instance)) == 60, "mz_zip_archive_file_stat.m_external_attr has unexpected offset % instead of 60", ((cast(*void)(*instance.m_external_attr)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_external_attr)) == 4, "mz_zip_archive_file_stat.m_external_attr has unexpected size % instead of 4", size_of(type_of(mz_zip_archive_file_stat.m_external_attr)));
+    assert(((cast(*void)(*instance.m_local_header_ofs)) - cast(*void)(*instance)) == 64, "mz_zip_archive_file_stat.m_local_header_ofs has unexpected offset % instead of 64", ((cast(*void)(*instance.m_local_header_ofs)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_local_header_ofs)) == 8, "mz_zip_archive_file_stat.m_local_header_ofs has unexpected size % instead of 8", size_of(type_of(mz_zip_archive_file_stat.m_local_header_ofs)));
+    assert(((cast(*void)(*instance.m_comment_size)) - cast(*void)(*instance)) == 72, "mz_zip_archive_file_stat.m_comment_size has unexpected offset % instead of 72", ((cast(*void)(*instance.m_comment_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_comment_size)) == 4, "mz_zip_archive_file_stat.m_comment_size has unexpected size % instead of 4", size_of(type_of(mz_zip_archive_file_stat.m_comment_size)));
+    assert(((cast(*void)(*instance.m_is_directory)) - cast(*void)(*instance)) == 76, "mz_zip_archive_file_stat.m_is_directory has unexpected offset % instead of 76", ((cast(*void)(*instance.m_is_directory)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_is_directory)) == 4, "mz_zip_archive_file_stat.m_is_directory has unexpected size % instead of 4", size_of(type_of(mz_zip_archive_file_stat.m_is_directory)));
+    assert(((cast(*void)(*instance.m_is_encrypted)) - cast(*void)(*instance)) == 80, "mz_zip_archive_file_stat.m_is_encrypted has unexpected offset % instead of 80", ((cast(*void)(*instance.m_is_encrypted)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_is_encrypted)) == 4, "mz_zip_archive_file_stat.m_is_encrypted has unexpected size % instead of 4", size_of(type_of(mz_zip_archive_file_stat.m_is_encrypted)));
+    assert(((cast(*void)(*instance.m_is_supported)) - cast(*void)(*instance)) == 84, "mz_zip_archive_file_stat.m_is_supported has unexpected offset % instead of 84", ((cast(*void)(*instance.m_is_supported)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_is_supported)) == 4, "mz_zip_archive_file_stat.m_is_supported has unexpected size % instead of 4", size_of(type_of(mz_zip_archive_file_stat.m_is_supported)));
+    assert(((cast(*void)(*instance.m_filename)) - cast(*void)(*instance)) == 88, "mz_zip_archive_file_stat.m_filename has unexpected offset % instead of 88", ((cast(*void)(*instance.m_filename)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_filename)) == 512, "mz_zip_archive_file_stat.m_filename has unexpected size % instead of 512", size_of(type_of(mz_zip_archive_file_stat.m_filename)));
+    assert(((cast(*void)(*instance.m_comment)) - cast(*void)(*instance)) == 600, "mz_zip_archive_file_stat.m_comment has unexpected offset % instead of 600", ((cast(*void)(*instance.m_comment)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive_file_stat.m_comment)) == 512, "mz_zip_archive_file_stat.m_comment has unexpected size % instead of 512", size_of(type_of(mz_zip_archive_file_stat.m_comment)));
+    assert(size_of(mz_zip_archive_file_stat) == 1112, "mz_zip_archive_file_stat has size % instead of 1112", size_of(mz_zip_archive_file_stat));
+}
+
+mz_file_read_func :: #type (a0: *void, a1: mz_uint64, a2: *void, a3: size_t) -> size_t #c_call;
+mz_file_write_func :: #type (a0: *void, a1: mz_uint64, a2: *void, a3: size_t) -> size_t #c_call;
+mz_file_needs_keepalive :: #type (a0: *void) -> mz_bool #c_call;
+
+mz_zip_internal_state_tag :: struct {}
+mz_zip_internal_state :: mz_zip_internal_state_tag;
+
+mz_zip_mode :: enum s32 {
+    INVALID                    :: 0;
+    READING                    :: 1;
+    WRITING                    :: 2;
+    WRITING_HAS_BEEN_FINALIZED :: 3;
+
+    MZ_ZIP_MODE_INVALID                    :: INVALID;
+    MZ_ZIP_MODE_READING                    :: READING;
+    MZ_ZIP_MODE_WRITING                    :: WRITING;
+    MZ_ZIP_MODE_WRITING_HAS_BEEN_FINALIZED :: WRITING_HAS_BEEN_FINALIZED;
+}
+
+mz_zip_flags :: enum s32 {
+    CASE_SENSITIVE                :: 256;
+    IGNORE_PATH                   :: 512;
+    COMPRESSED_DATA               :: 1024;
+    DO_NOT_SORT_CENTRAL_DIRECTORY :: 2048;
+    VALIDATE_LOCATE_FILE_FLAG     :: 4096;
+    VALIDATE_HEADERS_ONLY         :: 8192;
+    WRITE_ZIP64                   :: 16384;
+    WRITE_ALLOW_READING           :: 32768;
+    ASCII_FILENAME                :: 65536;
+
+    MZ_ZIP_FLAG_CASE_SENSITIVE                :: CASE_SENSITIVE;
+    MZ_ZIP_FLAG_IGNORE_PATH                   :: IGNORE_PATH;
+    MZ_ZIP_FLAG_COMPRESSED_DATA               :: COMPRESSED_DATA;
+    MZ_ZIP_FLAG_DO_NOT_SORT_CENTRAL_DIRECTORY :: DO_NOT_SORT_CENTRAL_DIRECTORY;
+    MZ_ZIP_FLAG_VALIDATE_LOCATE_FILE_FLAG     :: VALIDATE_LOCATE_FILE_FLAG;
+    MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY         :: VALIDATE_HEADERS_ONLY;
+    MZ_ZIP_FLAG_WRITE_ZIP64                   :: WRITE_ZIP64;
+    MZ_ZIP_FLAG_WRITE_ALLOW_READING           :: WRITE_ALLOW_READING;
+    MZ_ZIP_FLAG_ASCII_FILENAME                :: ASCII_FILENAME;
+}
+
+mz_zip_type :: enum s32 {
+    YPE_INVALID :: 0;
+    YPE_USER    :: 1;
+    YPE_MEMORY  :: 2;
+    YPE_HEAP    :: 3;
+    YPE_FILE    :: 4;
+    YPE_CFILE   :: 5;
+    OTAL_TYPES  :: 6;
+
+    MZ_ZIP_TYPE_INVALID :: YPE_INVALID;
+    MZ_ZIP_TYPE_USER    :: YPE_USER;
+    MZ_ZIP_TYPE_MEMORY  :: YPE_MEMORY;
+    MZ_ZIP_TYPE_HEAP    :: YPE_HEAP;
+    MZ_ZIP_TYPE_FILE    :: YPE_FILE;
+    MZ_ZIP_TYPE_CFILE   :: YPE_CFILE;
+    MZ_ZIP_TOTAL_TYPES  :: OTAL_TYPES;
+}
+
+/* miniz error codes. Be sure to update mz_zip_get_error_string() if you add or modify this enum. */
+mz_zip_error :: enum s32 {
+    NO_ERROR                     :: 0;
+    UNDEFINED_ERROR              :: 1;
+    TOO_MANY_FILES               :: 2;
+    FILE_TOO_LARGE               :: 3;
+    UNSUPPORTED_METHOD           :: 4;
+    UNSUPPORTED_ENCRYPTION       :: 5;
+    UNSUPPORTED_FEATURE          :: 6;
+    FAILED_FINDING_CENTRAL_DIR   :: 7;
+    NOT_AN_ARCHIVE               :: 8;
+    INVALID_HEADER_OR_CORRUPTED  :: 9;
+    UNSUPPORTED_MULTIDISK        :: 10;
+    DECOMPRESSION_FAILED         :: 11;
+    COMPRESSION_FAILED           :: 12;
+    UNEXPECTED_DECOMPRESSED_SIZE :: 13;
+    CRC_CHECK_FAILED             :: 14;
+    UNSUPPORTED_CDIR_SIZE        :: 15;
+    ALLOC_FAILED                 :: 16;
+    FILE_OPEN_FAILED             :: 17;
+    FILE_CREATE_FAILED           :: 18;
+    FILE_WRITE_FAILED            :: 19;
+    FILE_READ_FAILED             :: 20;
+    FILE_CLOSE_FAILED            :: 21;
+    FILE_SEEK_FAILED             :: 22;
+    FILE_STAT_FAILED             :: 23;
+    INVALID_PARAMETER            :: 24;
+    INVALID_FILENAME             :: 25;
+    BUF_TOO_SMALL                :: 26;
+    INTERNAL_ERROR               :: 27;
+    FILE_NOT_FOUND               :: 28;
+    ARCHIVE_TOO_LARGE            :: 29;
+    VALIDATION_FAILED            :: 30;
+    WRITE_CALLBACK_FAILED        :: 31;
+    TOTAL_ERRORS                 :: 32;
+
+    MZ_ZIP_NO_ERROR                     :: NO_ERROR;
+    MZ_ZIP_UNDEFINED_ERROR              :: UNDEFINED_ERROR;
+    MZ_ZIP_TOO_MANY_FILES               :: TOO_MANY_FILES;
+    MZ_ZIP_FILE_TOO_LARGE               :: FILE_TOO_LARGE;
+    MZ_ZIP_UNSUPPORTED_METHOD           :: UNSUPPORTED_METHOD;
+    MZ_ZIP_UNSUPPORTED_ENCRYPTION       :: UNSUPPORTED_ENCRYPTION;
+    MZ_ZIP_UNSUPPORTED_FEATURE          :: UNSUPPORTED_FEATURE;
+    MZ_ZIP_FAILED_FINDING_CENTRAL_DIR   :: FAILED_FINDING_CENTRAL_DIR;
+    MZ_ZIP_NOT_AN_ARCHIVE               :: NOT_AN_ARCHIVE;
+    MZ_ZIP_INVALID_HEADER_OR_CORRUPTED  :: INVALID_HEADER_OR_CORRUPTED;
+    MZ_ZIP_UNSUPPORTED_MULTIDISK        :: UNSUPPORTED_MULTIDISK;
+    MZ_ZIP_DECOMPRESSION_FAILED         :: DECOMPRESSION_FAILED;
+    MZ_ZIP_COMPRESSION_FAILED           :: COMPRESSION_FAILED;
+    MZ_ZIP_UNEXPECTED_DECOMPRESSED_SIZE :: UNEXPECTED_DECOMPRESSED_SIZE;
+    MZ_ZIP_CRC_CHECK_FAILED             :: CRC_CHECK_FAILED;
+    MZ_ZIP_UNSUPPORTED_CDIR_SIZE        :: UNSUPPORTED_CDIR_SIZE;
+    MZ_ZIP_ALLOC_FAILED                 :: ALLOC_FAILED;
+    MZ_ZIP_FILE_OPEN_FAILED             :: FILE_OPEN_FAILED;
+    MZ_ZIP_FILE_CREATE_FAILED           :: FILE_CREATE_FAILED;
+    MZ_ZIP_FILE_WRITE_FAILED            :: FILE_WRITE_FAILED;
+    MZ_ZIP_FILE_READ_FAILED             :: FILE_READ_FAILED;
+    MZ_ZIP_FILE_CLOSE_FAILED            :: FILE_CLOSE_FAILED;
+    MZ_ZIP_FILE_SEEK_FAILED             :: FILE_SEEK_FAILED;
+    MZ_ZIP_FILE_STAT_FAILED             :: FILE_STAT_FAILED;
+    MZ_ZIP_INVALID_PARAMETER            :: INVALID_PARAMETER;
+    MZ_ZIP_INVALID_FILENAME             :: INVALID_FILENAME;
+    MZ_ZIP_BUF_TOO_SMALL                :: BUF_TOO_SMALL;
+    MZ_ZIP_INTERNAL_ERROR               :: INTERNAL_ERROR;
+    MZ_ZIP_FILE_NOT_FOUND               :: FILE_NOT_FOUND;
+    MZ_ZIP_ARCHIVE_TOO_LARGE            :: ARCHIVE_TOO_LARGE;
+    MZ_ZIP_VALIDATION_FAILED            :: VALIDATION_FAILED;
+    MZ_ZIP_WRITE_CALLBACK_FAILED        :: WRITE_CALLBACK_FAILED;
+    MZ_ZIP_TOTAL_ERRORS                 :: TOTAL_ERRORS;
+}
+
+mz_zip_archive :: struct {
+    m_archive_size:               mz_uint64;
+    m_central_directory_file_ofs: mz_uint64;
+
+    /* We only support up to UINT32_MAX files in zip64 mode. */
+    m_total_files:                mz_uint32;
+    m_zip_mode:                   mz_zip_mode;
+    m_zip_type:                   mz_zip_type;
+    m_last_error:                 mz_zip_error;
+
+    m_file_offset_alignment:      mz_uint64;
+
+    m_pAlloc:                     mz_alloc_func;
+    m_pFree:                      mz_free_func;
+    m_pRealloc:                   mz_realloc_func;
+    m_pAlloc_opaque:              *void;
+
+    m_pRead:                      mz_file_read_func;
+    m_pWrite:                     mz_file_write_func;
+    m_pNeeds_keepalive:           mz_file_needs_keepalive;
+    m_pIO_opaque:                 *void;
+
+    m_pState:                     *mz_zip_internal_state;
+}
+#run {
+    instance: mz_zip_archive;
+    assert(((cast(*void)(*instance.m_archive_size)) - cast(*void)(*instance)) == 0, "mz_zip_archive.m_archive_size has unexpected offset % instead of 0", ((cast(*void)(*instance.m_archive_size)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_archive_size)) == 8, "mz_zip_archive.m_archive_size has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_archive_size)));
+    assert(((cast(*void)(*instance.m_central_directory_file_ofs)) - cast(*void)(*instance)) == 8, "mz_zip_archive.m_central_directory_file_ofs has unexpected offset % instead of 8", ((cast(*void)(*instance.m_central_directory_file_ofs)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_central_directory_file_ofs)) == 8, "mz_zip_archive.m_central_directory_file_ofs has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_central_directory_file_ofs)));
+    assert(((cast(*void)(*instance.m_total_files)) - cast(*void)(*instance)) == 16, "mz_zip_archive.m_total_files has unexpected offset % instead of 16", ((cast(*void)(*instance.m_total_files)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_total_files)) == 4, "mz_zip_archive.m_total_files has unexpected size % instead of 4", size_of(type_of(mz_zip_archive.m_total_files)));
+    assert(((cast(*void)(*instance.m_zip_mode)) - cast(*void)(*instance)) == 20, "mz_zip_archive.m_zip_mode has unexpected offset % instead of 20", ((cast(*void)(*instance.m_zip_mode)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_zip_mode)) == 4, "mz_zip_archive.m_zip_mode has unexpected size % instead of 4", size_of(type_of(mz_zip_archive.m_zip_mode)));
+    assert(((cast(*void)(*instance.m_zip_type)) - cast(*void)(*instance)) == 24, "mz_zip_archive.m_zip_type has unexpected offset % instead of 24", ((cast(*void)(*instance.m_zip_type)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_zip_type)) == 4, "mz_zip_archive.m_zip_type has unexpected size % instead of 4", size_of(type_of(mz_zip_archive.m_zip_type)));
+    assert(((cast(*void)(*instance.m_last_error)) - cast(*void)(*instance)) == 28, "mz_zip_archive.m_last_error has unexpected offset % instead of 28", ((cast(*void)(*instance.m_last_error)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_last_error)) == 4, "mz_zip_archive.m_last_error has unexpected size % instead of 4", size_of(type_of(mz_zip_archive.m_last_error)));
+    assert(((cast(*void)(*instance.m_file_offset_alignment)) - cast(*void)(*instance)) == 32, "mz_zip_archive.m_file_offset_alignment has unexpected offset % instead of 32", ((cast(*void)(*instance.m_file_offset_alignment)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_file_offset_alignment)) == 8, "mz_zip_archive.m_file_offset_alignment has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_file_offset_alignment)));
+    assert(((cast(*void)(*instance.m_pAlloc)) - cast(*void)(*instance)) == 40, "mz_zip_archive.m_pAlloc has unexpected offset % instead of 40", ((cast(*void)(*instance.m_pAlloc)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pAlloc)) == 8, "mz_zip_archive.m_pAlloc has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pAlloc)));
+    assert(((cast(*void)(*instance.m_pFree)) - cast(*void)(*instance)) == 48, "mz_zip_archive.m_pFree has unexpected offset % instead of 48", ((cast(*void)(*instance.m_pFree)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pFree)) == 8, "mz_zip_archive.m_pFree has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pFree)));
+    assert(((cast(*void)(*instance.m_pRealloc)) - cast(*void)(*instance)) == 56, "mz_zip_archive.m_pRealloc has unexpected offset % instead of 56", ((cast(*void)(*instance.m_pRealloc)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pRealloc)) == 8, "mz_zip_archive.m_pRealloc has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pRealloc)));
+    assert(((cast(*void)(*instance.m_pAlloc_opaque)) - cast(*void)(*instance)) == 64, "mz_zip_archive.m_pAlloc_opaque has unexpected offset % instead of 64", ((cast(*void)(*instance.m_pAlloc_opaque)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pAlloc_opaque)) == 8, "mz_zip_archive.m_pAlloc_opaque has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pAlloc_opaque)));
+    assert(((cast(*void)(*instance.m_pRead)) - cast(*void)(*instance)) == 72, "mz_zip_archive.m_pRead has unexpected offset % instead of 72", ((cast(*void)(*instance.m_pRead)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pRead)) == 8, "mz_zip_archive.m_pRead has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pRead)));
+    assert(((cast(*void)(*instance.m_pWrite)) - cast(*void)(*instance)) == 80, "mz_zip_archive.m_pWrite has unexpected offset % instead of 80", ((cast(*void)(*instance.m_pWrite)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pWrite)) == 8, "mz_zip_archive.m_pWrite has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pWrite)));
+    assert(((cast(*void)(*instance.m_pNeeds_keepalive)) - cast(*void)(*instance)) == 88, "mz_zip_archive.m_pNeeds_keepalive has unexpected offset % instead of 88", ((cast(*void)(*instance.m_pNeeds_keepalive)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pNeeds_keepalive)) == 8, "mz_zip_archive.m_pNeeds_keepalive has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pNeeds_keepalive)));
+    assert(((cast(*void)(*instance.m_pIO_opaque)) - cast(*void)(*instance)) == 96, "mz_zip_archive.m_pIO_opaque has unexpected offset % instead of 96", ((cast(*void)(*instance.m_pIO_opaque)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pIO_opaque)) == 8, "mz_zip_archive.m_pIO_opaque has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pIO_opaque)));
+    assert(((cast(*void)(*instance.m_pState)) - cast(*void)(*instance)) == 104, "mz_zip_archive.m_pState has unexpected offset % instead of 104", ((cast(*void)(*instance.m_pState)) - cast(*void)(*instance)));
+    assert(size_of(type_of(mz_zip_archive.m_pState)) == 8, "mz_zip_archive.m_pState has unexpected size % instead of 8", size_of(type_of(mz_zip_archive.m_pState)));
+    assert(size_of(mz_zip_archive) == 112, "mz_zip_archive has size % instead of 112", size_of(mz_zip_archive));
+}
+
+/* Inits a ZIP archive reader. */
+/* These functions read and validate the archive's central directory. */
+mz_zip_reader_init :: (pZip: *mz_zip_archive, size: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+mz_zip_reader_init_mem :: (pZip: *mz_zip_archive, pMem: *void, size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Read a archive from a disk file. */
+/* file_start_ofs is the file offset where the archive actually begins, or 0. */
+/* actual_archive_size is the true total size of the archive, which may be smaller than the file's actual size on disk. If zero the entire file is treated as the archive. */
+mz_zip_reader_init_file :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint32) -> mz_bool #foreign minizlib;
+mz_zip_reader_init_file_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint, file_start_ofs: mz_uint64, archive_size: mz_uint64) -> mz_bool #foreign minizlib;
+
+/* Read an archive from an already opened FILE, beginning at the current file position. */
+/* The archive is assumed to be archive_size bytes long. If archive_size is < 0, then the entire rest of the file is assumed to contain the archive. */
+/* The FILE will NOT be closed when mz_zip_reader_end() is called. */
+mz_zip_reader_init_cfile :: (pZip: *mz_zip_archive, pFile: *FILE, archive_size: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Ends archive reading, freeing all allocations, and closing the input archive file if mz_zip_reader_init_file() was used. */
+mz_zip_reader_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
+
+/* Clears a mz_zip_archive struct to all zeros. */
+/* Important: This must be done before passing the struct to any mz_zip functions. */
+mz_zip_zero_struct :: (pZip: *mz_zip_archive) -> void #foreign minizlib;
+
+mz_zip_get_mode :: (pZip: *mz_zip_archive) -> mz_zip_mode #foreign minizlib;
+mz_zip_get_type :: (pZip: *mz_zip_archive) -> mz_zip_type #foreign minizlib;
+
+/* Returns the total number of files in the archive. */
+mz_zip_reader_get_num_files :: (pZip: *mz_zip_archive) -> mz_uint #foreign minizlib;
+
+mz_zip_get_archive_size :: (pZip: *mz_zip_archive) -> mz_uint64 #foreign minizlib;
+mz_zip_get_archive_file_start_offset :: (pZip: *mz_zip_archive) -> mz_uint64 #foreign minizlib;
+mz_zip_get_cfile :: (pZip: *mz_zip_archive) -> *FILE #foreign minizlib;
+
+/* Reads n bytes of raw archive data, starting at file offset file_ofs, to pBuf. */
+mz_zip_read_archive_data :: (pZip: *mz_zip_archive, file_ofs: mz_uint64, pBuf: *void, n: size_t) -> size_t #foreign minizlib;
+
+/* Attempts to locates a file in the archive's central directory. */
+/* Valid flags: MZ_ZIP_FLAG_CASE_SENSITIVE, MZ_ZIP_FLAG_IGNORE_PATH */
+/* Returns -1 if the file cannot be found. */
+// mz_zip_locate_file :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint) -> s32 #foreign __UnknownLib;
+
+/* Returns MZ_FALSE if the file cannot be found. */
+// mz_zip_locate_file_v2 :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint, pIndex: *mz_uint32) -> mz_bool #foreign __UnknownLib;
+
+/* All mz_zip funcs set the m_last_error field in the mz_zip_archive struct. These functions retrieve/manipulate this field. */
+/* Note that the m_last_error functionality is not thread safe. */
+mz_zip_set_last_error :: (pZip: *mz_zip_archive, err_num: mz_zip_error) -> mz_zip_error #foreign minizlib;
+mz_zip_peek_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign minizlib;
+mz_zip_clear_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign minizlib;
+mz_zip_get_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign minizlib;
+mz_zip_get_error_string :: (mz_err: mz_zip_error) -> *u8 #foreign minizlib;
+
+/* MZ_TRUE if the archive file entry is a directory entry. */
+mz_zip_reader_is_file_a_directory :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign minizlib;
+
+/* MZ_TRUE if the file is encrypted/strong encrypted. */
+mz_zip_reader_is_file_encrypted :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign minizlib;
+
+/* MZ_TRUE if the compression method is supported, and the file is not encrypted, and the file is not a compressed patch file. */
+mz_zip_reader_is_file_supported :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Retrieves the filename of an archive file entry. */
+/* Returns the number of bytes written to pFilename, or if filename_buf_size is 0 this function returns the number of bytes needed to fully store the filename. */
+mz_zip_reader_get_filename :: (pZip: *mz_zip_archive, file_index: mz_uint, pFilename: *u8, filename_buf_size: mz_uint) -> mz_uint #foreign minizlib;
+
+/* Attempts to locates a file in the archive's central directory. */
+/* Valid flags: MZ_ZIP_FLAG_CASE_SENSITIVE, MZ_ZIP_FLAG_IGNORE_PATH */
+/* Returns -1 if the file cannot be found. */
+mz_zip_reader_locate_file :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint) -> s32 #foreign minizlib;
+mz_zip_reader_locate_file_v2 :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint, file_index: *mz_uint32) -> s32 #foreign minizlib;
+
+/* Returns detailed information about an archive file entry. */
+mz_zip_reader_file_stat :: (pZip: *mz_zip_archive, file_index: mz_uint, pStat: *mz_zip_archive_file_stat) -> mz_bool #foreign minizlib;
+
+/* MZ_TRUE if the file is in zip64 format. */
+/* A file is considered zip64 if it contained a zip64 end of central directory marker, or if it contained any zip64 extended file information fields in the central directory. */
+mz_zip_is_zip64 :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
+
+/* Returns the total central directory size in bytes. */
+/* The current max supported size is <= MZ_UINT32_MAX. */
+mz_zip_get_central_dir_size :: (pZip: *mz_zip_archive) -> size_t #foreign minizlib;
+
+/* Extracts a archive file to a memory buffer using no memory allocation. */
+/* There must be at least enough room on the stack to store the inflator's state (~34KB or so). */
+mz_zip_reader_extract_to_mem_no_alloc :: (pZip: *mz_zip_archive, file_index: mz_uint, pBuf: *void, buf_size: size_t, flags: mz_uint, pUser_read_buf: *void, user_read_buf_size: size_t) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_file_to_mem_no_alloc :: (pZip: *mz_zip_archive, pFilename: *u8, pBuf: *void, buf_size: size_t, flags: mz_uint, pUser_read_buf: *void, user_read_buf_size: size_t) -> mz_bool #foreign minizlib;
+
+/* Extracts a archive file to a memory buffer. */
+mz_zip_reader_extract_to_mem :: (pZip: *mz_zip_archive, file_index: mz_uint, pBuf: *void, buf_size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_file_to_mem :: (pZip: *mz_zip_archive, pFilename: *u8, pBuf: *void, buf_size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Extracts a archive file to a dynamically allocated heap buffer. */
+/* The memory will be allocated via the mz_zip_archive's alloc/realloc functions. */
+/* Returns NULL and sets the last error on failure. */
+mz_zip_reader_extract_to_heap :: (pZip: *mz_zip_archive, file_index: mz_uint, pSize: *size_t, flags: mz_uint) -> *void #foreign minizlib;
+mz_zip_reader_extract_file_to_heap :: (pZip: *mz_zip_archive, pFilename: *u8, pSize: *size_t, flags: mz_uint) -> *void #foreign minizlib;
+
+/* Extracts a archive file using a callback function to output the file's data. */
+mz_zip_reader_extract_to_callback :: (pZip: *mz_zip_archive, file_index: mz_uint, pCallback: mz_file_write_func, pOpaque: *void, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_file_to_callback :: (pZip: *mz_zip_archive, pFilename: *u8, pCallback: mz_file_write_func, pOpaque: *void, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Extracts a archive file to a disk file and sets its last accessed and modified times. */
+/* This function only extracts files, not archive directory records. */
+mz_zip_reader_extract_to_file :: (pZip: *mz_zip_archive, file_index: mz_uint, pDst_filename: *u8, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_file_to_file :: (pZip: *mz_zip_archive, pArchive_filename: *u8, pDst_filename: *u8, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Extracts a archive file starting at the current position in the destination FILE stream. */
+mz_zip_reader_extract_to_cfile :: (pZip: *mz_zip_archive, file_index: mz_uint, File: *FILE, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_file_to_cfile :: (pZip: *mz_zip_archive, pArchive_filename: *u8, pFile: *FILE, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* This function compares the archive's local headers, the optional local zip64 extended information block, and the optional descriptor following the compressed data vs. the data in the central directory. */
+/* It also validates that each file can be successfully uncompressed unless the MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY is specified. */
+mz_zip_validate_file :: (pZip: *mz_zip_archive, file_index: mz_uint, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Validates an entire archive by calling mz_zip_validate_file() on each file. */
+mz_zip_validate_archive :: (pZip: *mz_zip_archive, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Misc utils/helpers, valid for ZIP reading or writing */
+mz_zip_validate_mem_archive :: (pMem: *void, size: size_t, flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign minizlib;
+mz_zip_validate_file_archive :: (pFilename: *u8, flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign minizlib;
+
+/* Universal end function - calls either mz_zip_reader_end() or mz_zip_writer_end(). */
+mz_zip_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
+
+/* Inits a ZIP archive writer. */
+mz_zip_writer_init :: (pZip: *mz_zip_archive, existing_size: mz_uint64) -> mz_bool #foreign minizlib;
+mz_zip_writer_init_v2 :: (pZip: *mz_zip_archive, existing_size: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_writer_init_heap :: (pZip: *mz_zip_archive, size_to_reserve_at_beginning: size_t, initial_allocation_size: size_t) -> mz_bool #foreign minizlib;
+mz_zip_writer_init_heap_v2 :: (pZip: *mz_zip_archive, size_to_reserve_at_beginning: size_t, initial_allocation_size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+mz_zip_writer_init_file :: (pZip: *mz_zip_archive, pFilename: *u8, size_to_reserve_at_beginning: mz_uint64) -> mz_bool #foreign minizlib;
+mz_zip_writer_init_file_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, size_to_reserve_at_beginning: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_writer_init_cfile :: (pZip: *mz_zip_archive, pFile: *FILE, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Converts a ZIP archive reader object into a writer object, to allow efficient in-place file appends to occur on an existing archive. */
+/* For archives opened using mz_zip_reader_init_file, pFilename must be the archive's filename so it can be reopened for writing. If the file can't be reopened, mz_zip_reader_end() will be called. */
+/* For archives opened using mz_zip_reader_init_mem, the memory block must be growable using the realloc callback (which defaults to realloc unless you've overridden it). */
+/* Finally, for archives opened using mz_zip_reader_init, the mz_zip_archive's user provided m_pWrite function cannot be NULL. */
+/* Note: In-place archive modification is not recommended unless you know what you're doing, because if execution stops or something goes wrong before */
+/* the archive is finalized the file's central directory will be hosed. */
+mz_zip_writer_init_from_reader :: (pZip: *mz_zip_archive, pFilename: *u8) -> mz_bool #foreign minizlib;
+mz_zip_writer_init_from_reader_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Adds the contents of a memory buffer to an archive. These functions record the current local time into the archive. */
+/* To add a directory entry, call this method with an archive name ending in a forwardslash with an empty buffer. */
+/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
+mz_zip_writer_add_mem :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, level_and_flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Like mz_zip_writer_add_mem(), except you can specify a file comment field, and optionally supply the function with already compressed data. */
+/* uncomp_size/uncomp_crc32 are only used if the MZ_ZIP_FLAG_COMPRESSED_DATA flag is specified. */
+mz_zip_writer_add_mem_ex :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, uncomp_size: mz_uint64, uncomp_crc32: mz_uint32) -> mz_bool #foreign minizlib;
+
+mz_zip_writer_add_mem_ex_v2 :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, uncomp_size: mz_uint64, uncomp_crc32: mz_uint32, last_modified: *time_t, user_extra_data_local: *u8, user_extra_data_local_len: mz_uint, user_extra_data_central: *u8, user_extra_data_central_len: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Adds the contents of a disk file to an archive. This function also records the disk file's modified time into the archive. */
+/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
+mz_zip_writer_add_file :: (pZip: *mz_zip_archive, pArchive_name: *u8, pSrc_filename: *u8, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Like mz_zip_writer_add_file(), except the file data is read from the specified FILE stream. */
+mz_zip_writer_add_cfile :: (pZip: *mz_zip_archive, pArchive_name: *u8, pSrc_file: *FILE, size_to_add: mz_uint64, pFile_time: *time_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, user_extra_data_local: *u8, user_extra_data_local_len: mz_uint, user_extra_data_central: *u8, user_extra_data_central_len: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Adds a file to an archive by fully cloning the data from another archive. */
+/* This function fully clones the source file's compressed data (no recompression), along with its full filename, extra data (it may add or modify the zip64 local header extra data field), and the optional descriptor following the compressed data. */
+mz_zip_writer_add_from_zip_reader :: (pZip: *mz_zip_archive, pSource_zip: *mz_zip_archive, src_file_index: mz_uint) -> mz_bool #foreign minizlib;
+
+/* Finalizes the archive by writing the central directory records followed by the end of central directory record. */
+/* After an archive is finalized, the only valid call on the mz_zip_archive struct is mz_zip_writer_end(). */
+/* An archive must be manually finalized by calling this function for it to be valid. */
+mz_zip_writer_finalize_archive :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
+
+/* Finalizes a heap archive, returning a poiner to the heap block and its size. */
+/* The heap block will be allocated using the mz_zip_archive's alloc/realloc callbacks. */
+mz_zip_writer_finalize_heap_archive :: (pZip: *mz_zip_archive, ppBuf: **void, pSize: *size_t) -> mz_bool #foreign minizlib;
+
+/* Ends archive writing, freeing all allocations, and closing the output file if mz_zip_writer_init_file() was used. */
+/* Note for the archive to be valid, it *must* have been finalized before ending (this function will not do it for you). */
+mz_zip_writer_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
+
+/* mz_zip_add_mem_to_archive_file_in_place() efficiently (but not atomically) appends a memory blob to a ZIP archive. */
+/* Note this is NOT a fully safe operation. If it crashes or dies in some way your archive can be left in a screwed up state (without a central directory). */
+/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
+/* TODO: Perhaps add an option to leave the existing central dir in place in case the add dies? We could then truncate the file (so the old central dir would be at the end) if something goes wrong. */
+mz_zip_add_mem_to_archive_file_in_place :: (pZip_filename: *u8, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_add_mem_to_archive_file_in_place_v2 :: (pZip_filename: *u8, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign minizlib;
+
+/* Reads a single file from an archive into a heap block. */
+/* If pComment is not NULL, only the file with the specified comment will be extracted. */
+/* Returns NULL on failure. */
+mz_zip_extract_archive_file_to_heap :: (pZip_filename: *u8, pArchive_name: *u8, pSize: *size_t, flags: mz_uint) -> *void #foreign minizlib;
+mz_zip_extract_archive_file_to_heap_v2 :: (pZip_filename: *u8, pArchive_name: *u8, pComment: *u8, pSize: *size_t, flags: mz_uint, pErr: *mz_zip_error) -> *void #foreign minizlib;
+
+#scope_file
+
+#import "Basic"; // For assert
+minizlib :: #foreign_library,no_dll "./win/miniz";

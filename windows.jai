@@ -1,12 +1,13 @@
 //
 // This file was auto-generated using the following command:
 //
-// jai C:/Dev/jaiscape/workbench//external/miniz/build.jai
+// jai C:/dev/train/src/workbench//external/miniz/build.jai
 //
-
 size_t :: u64;
-FILE :: void;
+FILE   :: *void;
 time_t :: s64;
+
+
 
 MINIZ_X86_OR_X64_CPU :: 1;
 
@@ -33,13 +34,143 @@ MZ_DEFAULT_WINDOW_BITS :: 15;
 
 Z_NULL :: 0;
 
+mz_zip_extract_archive_file_to_heap_v2 :: (pZip_filename: *u8, pArchive_name: *u8, pComment: *u8, pSize: *size_t, flags: mz_uint, pErr: *mz_zip_error) -> *void #foreign miniz;
+
+/* Reads a single file from an archive into a heap block. */
+/* If pComment is not NULL, only the file with the specified comment will be extracted. */
+/* Returns NULL on failure. */
+mz_zip_extract_archive_file_to_heap :: (pZip_filename: *u8, pArchive_name: *u8, pSize: *size_t, flags: mz_uint) -> *void #foreign miniz;
+
+mz_zip_add_mem_to_archive_file_in_place_v2 :: (pZip_filename: *u8, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign miniz;
+
+/* mz_zip_add_mem_to_archive_file_in_place() efficiently (but not atomically) appends a memory blob to a ZIP archive. */
+/* Note this is NOT a fully safe operation. If it crashes or dies in some way your archive can be left in a screwed up state (without a central directory). */
+/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
+/* TODO: Perhaps add an option to leave the existing central dir in place in case the add dies? We could then truncate the file (so the old central dir would be at the end) if something goes wrong. */
+mz_zip_add_mem_to_archive_file_in_place :: (pZip_filename: *u8, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint) -> mz_bool #foreign miniz;
+
+/* Ends archive writing, freeing all allocations, and closing the output file if mz_zip_writer_init_file() was used. */
+/* Note for the archive to be valid, it *must* have been finalized before ending (this function will not do it for you). */
+mz_zip_writer_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign miniz;
+
+/* Finalizes a heap archive, returning a poiner to the heap block and its size. */
+/* The heap block will be allocated using the mz_zip_archive's alloc/realloc callbacks. */
+mz_zip_writer_finalize_heap_archive :: (pZip: *mz_zip_archive, ppBuf: **void, pSize: *size_t) -> mz_bool #foreign miniz;
+
+/* Finalizes the archive by writing the central directory records followed by the end of central directory record. */
+/* After an archive is finalized, the only valid call on the mz_zip_archive struct is mz_zip_writer_end(). */
+/* An archive must be manually finalized by calling this function for it to be valid. */
+mz_zip_writer_finalize_archive :: (pZip: *mz_zip_archive) -> mz_bool #foreign miniz;
+
+/* Adds a file to an archive by fully cloning the data from another archive. */
+/* This function fully clones the source file's compressed data (no recompression), along with its full filename, extra data (it may add or modify the zip64 local header extra data field), and the optional descriptor following the compressed data. */
+mz_zip_writer_add_from_zip_reader :: (pZip: *mz_zip_archive, pSource_zip: *mz_zip_archive, src_file_index: mz_uint) -> mz_bool #foreign miniz;
+
+/* Like mz_zip_writer_add_file(), except the file data is read from the specified FILE stream. */
+mz_zip_writer_add_cfile :: (pZip: *mz_zip_archive, pArchive_name: *u8, pSrc_file: *FILE, size_to_add: mz_uint64, pFile_time: *time_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, user_extra_data_local: *u8, user_extra_data_local_len: mz_uint, user_extra_data_central: *u8, user_extra_data_central_len: mz_uint) -> mz_bool #foreign miniz;
+
+/* Adds the contents of a disk file to an archive. This function also records the disk file's modified time into the archive. */
+/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
+mz_zip_writer_add_file :: (pZip: *mz_zip_archive, pArchive_name: *u8, pSrc_filename: *u8, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint) -> mz_bool #foreign miniz;
+
+mz_zip_writer_add_mem_ex_v2 :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, uncomp_size: mz_uint64, uncomp_crc32: mz_uint32, last_modified: *time_t, user_extra_data_local: *u8, user_extra_data_local_len: mz_uint, user_extra_data_central: *u8, user_extra_data_central_len: mz_uint) -> mz_bool #foreign miniz;
+
+/* Like mz_zip_writer_add_mem(), except you can specify a file comment field, and optionally supply the function with already compressed data. */
+/* uncomp_size/uncomp_crc32 are only used if the MZ_ZIP_FLAG_COMPRESSED_DATA flag is specified. */
+mz_zip_writer_add_mem_ex :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, uncomp_size: mz_uint64, uncomp_crc32: mz_uint32) -> mz_bool #foreign miniz;
+
+/* Adds the contents of a memory buffer to an archive. These functions record the current local time into the archive. */
+/* To add a directory entry, call this method with an archive name ending in a forwardslash with an empty buffer. */
+/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
+mz_zip_writer_add_mem :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, level_and_flags: mz_uint) -> mz_bool #foreign miniz;
+
+mz_zip_writer_init_from_reader_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint) -> mz_bool #foreign miniz;
+
+/* Converts a ZIP archive reader object into a writer object, to allow efficient in-place file appends to occur on an existing archive. */
+/* For archives opened using mz_zip_reader_init_file, pFilename must be the archive's filename so it can be reopened for writing. If the file can't be reopened, mz_zip_reader_end() will be called. */
+/* For archives opened using mz_zip_reader_init_mem, the memory block must be growable using the realloc callback (which defaults to realloc unless you've overridden it). */
+/* Finally, for archives opened using mz_zip_reader_init, the mz_zip_archive's user provided m_pWrite function cannot be NULL. */
+/* Note: In-place archive modification is not recommended unless you know what you're doing, because if execution stops or something goes wrong before */
+/* the archive is finalized the file's central directory will be hosed. */
+mz_zip_writer_init_from_reader :: (pZip: *mz_zip_archive, pFilename: *u8) -> mz_bool #foreign miniz;
+
+mz_zip_writer_init_cfile :: (pZip: *mz_zip_archive, pFile: *FILE, flags: mz_uint) -> mz_bool #foreign miniz;
+
+mz_zip_writer_init_file_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, size_to_reserve_at_beginning: mz_uint64, flags: mz_uint) -> mz_bool #foreign miniz;
+
+mz_zip_writer_init_file :: (pZip: *mz_zip_archive, pFilename: *u8, size_to_reserve_at_beginning: mz_uint64) -> mz_bool #foreign miniz;
+
+mz_zip_writer_init_heap_v2 :: (pZip: *mz_zip_archive, size_to_reserve_at_beginning: size_t, initial_allocation_size: size_t, flags: mz_uint) -> mz_bool #foreign miniz;
+
+mz_zip_writer_init_heap :: (pZip: *mz_zip_archive, size_to_reserve_at_beginning: size_t, initial_allocation_size: size_t) -> mz_bool #foreign miniz;
+
+mz_zip_writer_init_v2 :: (pZip: *mz_zip_archive, existing_size: mz_uint64, flags: mz_uint) -> mz_bool #foreign miniz;
+
+/* Inits a ZIP archive writer. */
+mz_zip_writer_init :: (pZip: *mz_zip_archive, existing_size: mz_uint64) -> mz_bool #foreign miniz;
+
+/* Universal end function - calls either mz_zip_reader_end() or mz_zip_writer_end(). */
+mz_zip_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign miniz;
+
+mz_zip_validate_file_archive :: (pFilename: *u8, flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign miniz;
+
+/* Misc utils/helpers, valid for ZIP reading or writing */
+mz_zip_validate_mem_archive :: (pMem: *void, size: size_t, flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign miniz;
+
+Z_DEFLATED :: MZ_DEFLATED;
+Z_DEFAULT_WINDOW_BITS :: MZ_DEFAULT_WINDOW_BITS;
+alloc_func :: mz_alloc_func;
+free_func :: mz_free_func;
+internal_state :: mz_internal_state;
+z_stream :: mz_stream;
+deflateInit :: mz_deflateInit;
+deflateInit2 :: mz_deflateInit2;
+deflateReset :: mz_deflateReset;
+deflate :: mz_deflate;
+deflateEnd :: mz_deflateEnd;
+deflateBound :: mz_deflateBound;
+compress :: mz_compress;
+compress2 :: mz_compress2;
+compressBound :: mz_compressBound;
+inflateInit :: mz_inflateInit;
+inflateInit2 :: mz_inflateInit2;
+inflate :: mz_inflate;
+inflateEnd :: mz_inflateEnd;
+uncompress :: mz_uncompress;
+crc32 :: mz_crc32;
+adler32 :: mz_adler32;
 MAX_WBITS :: 15;
 MAX_MEM_LEVEL :: 9;
+zError :: mz_error;
+ZLIB_VERSION :: MZ_VERSION;
+ZLIB_VERNUM :: MZ_VERNUM;
+ZLIB_VER_MAJOR :: MZ_VER_MAJOR;
+ZLIB_VER_MINOR :: MZ_VER_MINOR;
+ZLIB_VER_REVISION :: MZ_VER_REVISION;
+ZLIB_VER_SUBREVISION :: MZ_VER_SUBREVISION;
+zlibVersion :: mz_version;
 
 MZ_FALSE :: 0;
 MZ_TRUE :: 1;
 
+/* Validates an entire archive by calling mz_zip_validate_file() on each file. */
+mz_zip_validate_archive :: (pZip: *mz_zip_archive, flags: mz_uint) -> mz_bool #foreign miniz;
+
+/* This function compares the archive's local headers, the optional local zip64 extended information block, and the optional descriptor following the compressed data vs. the data in the central directory. */
+/* It also validates that each file can be successfully uncompressed unless the MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY is specified. */
+mz_zip_validate_file :: (pZip: *mz_zip_archive, file_index: mz_uint, flags: mz_uint) -> mz_bool #foreign miniz;
+
+mz_zip_reader_extract_file_to_cfile :: (pZip: *mz_zip_archive, pArchive_filename: *u8, pFile: *FILE, flags: mz_uint) -> mz_bool #foreign miniz;
+
+/* Extracts a archive file starting at the current position in the destination FILE stream. */
+mz_zip_reader_extract_to_cfile :: (pZip: *mz_zip_archive, file_index: mz_uint, File: *FILE, flags: mz_uint) -> mz_bool #foreign miniz;
+
+MZ_UINT16_MAX :: 0xFFFF;
+MZ_UINT32_MAX :: 0xFFFFFFFF;
+
 TDEFL_LESS_MEMORY :: 0;
+
+mz_zip_reader_extract_file_to_file :: (pZip: *mz_zip_archive, pArchive_filename: *u8, pDst_filename: *u8, flags: mz_uint) -> mz_bool #foreign miniz;
 
 TINFL_LZ_DICT_SIZE :: 32768;
 
@@ -51,13 +182,13 @@ TINFL_BITBUF_SIZE :: 64;
 mz_ulong :: u32;
 
 /* mz_free() internally uses the MZ_FREE() macro (which by default calls free() unless you've modified the MZ_MALLOC macro) to release a block allocated from the heap. */
-mz_free :: (p: *void) -> void #foreign minizlib;
+mz_free :: (p: *void) -> void #foreign miniz;
 
 /* mz_adler32() returns the initial adler-32 value to use when called with ptr==NULL. */
-mz_adler32 :: (adler: mz_ulong, ptr: *u8, buf_len: size_t) -> mz_ulong #foreign minizlib;
+mz_adler32 :: (adler: mz_ulong, ptr: *u8, buf_len: size_t) -> mz_ulong #foreign miniz;
 
 /* mz_crc32() returns the initial CRC-32 value to use when called with ptr==NULL. */
-mz_crc32 :: (crc: mz_ulong, ptr: *u8, buf_len: size_t) -> mz_ulong #foreign minizlib;
+mz_crc32 :: (crc: mz_ulong, ptr: *u8, buf_len: size_t) -> mz_ulong #foreign miniz;
 
 /* Compression strategies. */
 MZ :: enum s32 {
@@ -201,7 +332,7 @@ mz_stream :: mz_stream_s;
 mz_streamp :: *mz_stream;
 
 /* Returns the version string of miniz.c. */
-mz_version :: () -> *u8 #foreign minizlib;
+mz_version :: () -> *u8 #foreign miniz;
 
 /* mz_deflateInit() initializes a compressor with default options: */
 /* Parameters: */
@@ -214,17 +345,17 @@ mz_version :: () -> *u8 #foreign minizlib;
 /*  MZ_STREAM_ERROR if the stream is bogus. */
 /*  MZ_PARAM_ERROR if the input parameters are bogus. */
 /*  MZ_MEM_ERROR on out of memory. */
-mz_deflateInit :: (pStream: mz_streamp, level: s32) -> s32 #foreign minizlib;
+mz_deflateInit :: (pStream: mz_streamp, level: s32) -> s32 #foreign miniz;
 
 /* mz_deflateInit2() is like mz_deflate(), except with more control: */
 /* Additional parameters: */
 /*   method must be MZ_DEFLATED */
 /*   window_bits must be MZ_DEFAULT_WINDOW_BITS (to wrap the deflate stream with zlib header/adler-32 footer) or -MZ_DEFAULT_WINDOW_BITS (raw deflate/no header or footer) */
 /*   mem_level must be between [1, 9] (it's checked but ignored by miniz.c) */
-mz_deflateInit2 :: (pStream: mz_streamp, level: s32, method: s32, window_bits: s32, mem_level: s32, strategy: s32) -> s32 #foreign minizlib;
+mz_deflateInit2 :: (pStream: mz_streamp, level: s32, method: s32, window_bits: s32, mem_level: s32, strategy: s32) -> s32 #foreign miniz;
 
 /* Quickly resets a compressor without having to reallocate anything. Same as calling mz_deflateEnd() followed by mz_deflateInit()/mz_deflateInit2(). */
-mz_deflateReset :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+mz_deflateReset :: (pStream: mz_streamp) -> s32 #foreign miniz;
 
 /* mz_deflate() compresses the input to output, consuming as much of the input and producing as much output as possible. */
 /* Parameters: */
@@ -236,31 +367,31 @@ mz_deflateReset :: (pStream: mz_streamp) -> s32 #foreign minizlib;
 /*   MZ_STREAM_ERROR if the stream is bogus. */
 /*   MZ_PARAM_ERROR if one of the parameters is invalid. */
 /*   MZ_BUF_ERROR if no forward progress is possible because the input and/or output buffers are empty. (Fill up the input buffer or free up some output space and try again.) */
-mz_deflate :: (pStream: mz_streamp, flush: s32) -> s32 #foreign minizlib;
+mz_deflate :: (pStream: mz_streamp, flush: s32) -> s32 #foreign miniz;
 
 /* mz_deflateEnd() deinitializes a compressor: */
 /* Return values: */
 /*  MZ_OK on success. */
 /*  MZ_STREAM_ERROR if the stream is bogus. */
-mz_deflateEnd :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+mz_deflateEnd :: (pStream: mz_streamp) -> s32 #foreign miniz;
 
 /* mz_deflateBound() returns a (very) conservative upper bound on the amount of data that could be generated by deflate(), assuming flush is set to only MZ_NO_FLUSH or MZ_FINISH. */
-mz_deflateBound :: (pStream: mz_streamp, source_len: mz_ulong) -> mz_ulong #foreign minizlib;
+mz_deflateBound :: (pStream: mz_streamp, source_len: mz_ulong) -> mz_ulong #foreign miniz;
 
 /* Single-call compression functions mz_compress() and mz_compress2(): */
 /* Returns MZ_OK on success, or one of the error codes from mz_deflate() on failure. */
-mz_compress :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong) -> s32 #foreign minizlib;
-mz_compress2 :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong, level: s32) -> s32 #foreign minizlib;
+mz_compress :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong) -> s32 #foreign miniz;
+mz_compress2 :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong, level: s32) -> s32 #foreign miniz;
 
 /* mz_compressBound() returns a (very) conservative upper bound on the amount of data that could be generated by calling mz_compress(). */
-mz_compressBound :: (source_len: mz_ulong) -> mz_ulong #foreign minizlib;
+mz_compressBound :: (source_len: mz_ulong) -> mz_ulong #foreign miniz;
 
 /* Initializes a decompressor. */
-mz_inflateInit :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+mz_inflateInit :: (pStream: mz_streamp) -> s32 #foreign miniz;
 
 /* mz_inflateInit2() is like mz_inflateInit() with an additional option that controls the window size and whether or not the stream has been wrapped with a zlib header/footer: */
 /* window_bits must be MZ_DEFAULT_WINDOW_BITS (to parse zlib header/footer) or -MZ_DEFAULT_WINDOW_BITS (raw deflate). */
-mz_inflateInit2 :: (pStream: mz_streamp, window_bits: s32) -> s32 #foreign minizlib;
+mz_inflateInit2 :: (pStream: mz_streamp, window_bits: s32) -> s32 #foreign miniz;
 
 /* Decompresses the input stream to the output, consuming only as much of the input as needed, and writing as much to the output as possible. */
 /* Parameters: */
@@ -276,17 +407,17 @@ mz_inflateInit2 :: (pStream: mz_streamp, window_bits: s32) -> s32 #foreign miniz
 /*   MZ_PARAM_ERROR if one of the parameters is invalid. */
 /*   MZ_BUF_ERROR if no forward progress is possible because the input buffer is empty but the inflater needs more input to continue, or if the output buffer is not large enough. Call mz_inflate() again */
 /*   with more input data, or with more room in the output buffer (except when using single call decompression, described above). */
-mz_inflate :: (pStream: mz_streamp, flush: s32) -> s32 #foreign minizlib;
+mz_inflate :: (pStream: mz_streamp, flush: s32) -> s32 #foreign miniz;
 
 /* Deinitializes a decompressor. */
-mz_inflateEnd :: (pStream: mz_streamp) -> s32 #foreign minizlib;
+mz_inflateEnd :: (pStream: mz_streamp) -> s32 #foreign miniz;
 
 /* Single-call decompression. */
 /* Returns MZ_OK on success, or one of the error codes from mz_inflate() on failure. */
-mz_uncompress :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong) -> s32 #foreign minizlib;
+mz_uncompress :: (pDest: *u8, pDest_len: *mz_ulong, pSource: *u8, source_len: mz_ulong) -> s32 #foreign miniz;
 
 /* Returns a string description of the specified error code, or NULL if the error code is invalid. */
-mz_error :: (err: s32) -> *u8 #foreign minizlib;
+mz_error :: (err: s32) -> *u8 #foreign miniz;
 
 Byte :: u8;
 uInt :: u32;
@@ -310,9 +441,9 @@ mz_int64 :: s64;
 mz_uint64 :: u64;
 mz_bool :: s32;
 
-miniz_def_alloc_func :: (opaque: *void, items: size_t, size: size_t) -> *void #foreign minizlib;
-miniz_def_free_func :: (opaque: *void, address: *void) -> void #foreign minizlib;
-miniz_def_realloc_func :: (opaque: *void, address: *void, items: size_t, size: size_t) -> *void #foreign minizlib;
+miniz_def_alloc_func :: (opaque: *void, items: size_t, size: size_t) -> *void #foreign miniz;
+miniz_def_free_func :: (opaque: *void, address: *void) -> void #foreign miniz;
+miniz_def_realloc_func :: (opaque: *void, address: *void, items: size_t, size: size_t) -> *void #foreign miniz;
 
 /* tdefl_init() compression flags logically OR'd together (low 12 bits contain the max. number of probes per dictionary search): */
 /* TDEFL_DEFAULT_MAX_PROBES: The compressor defaults to 128 dictionary probes per dictionary search. 0=Huffman only, 1=Huffman+LZ (fastest/crap compression), 4095=Huffman+LZ (slowest/best compression). */
@@ -364,11 +495,11 @@ TDEFL_1 :: enum s32 {
 /*  Function returns a pointer to the compressed data, or NULL on failure. */
 /*  *pOut_len will be set to the compressed data's size, which could be larger than src_buf_len on uncompressible data. */
 /*  The caller must free() the returned block when it's no longer needed. */
-tdefl_compress_mem_to_heap :: (pSrc_buf: *void, src_buf_len: size_t, pOut_len: *size_t, flags: s32) -> *void #foreign minizlib;
+tdefl_compress_mem_to_heap :: (pSrc_buf: *void, src_buf_len: size_t, pOut_len: *size_t, flags: s32) -> *void #foreign miniz;
 
 /* tdefl_compress_mem_to_mem() compresses a block in memory to another block in memory. */
 /* Returns 0 on failure. */
-tdefl_compress_mem_to_mem :: (pOut_buf: *void, out_buf_len: size_t, pSrc_buf: *void, src_buf_len: size_t, flags: s32) -> size_t #foreign minizlib;
+tdefl_compress_mem_to_mem :: (pOut_buf: *void, out_buf_len: size_t, pSrc_buf: *void, src_buf_len: size_t, flags: s32) -> size_t #foreign miniz;
 
 /* Compresses an image to a compressed PNG file in memory. */
 /* On entry: */
@@ -380,14 +511,14 @@ tdefl_compress_mem_to_mem :: (pOut_buf: *void, out_buf_len: size_t, pSrc_buf: *v
 /*  Function returns a pointer to the compressed data, or NULL on failure. */
 /*  *pLen_out will be set to the size of the PNG image file. */
 /*  The caller must mz_free() the returned heap block (which will typically be larger than *pLen_out) when it's no longer needed. */
-tdefl_write_image_to_png_file_in_memory_ex :: (pImage: *void, w: s32, h: s32, num_chans: s32, pLen_out: *size_t, level: mz_uint, flip: mz_bool) -> *void #foreign minizlib;
-tdefl_write_image_to_png_file_in_memory :: (pImage: *void, w: s32, h: s32, num_chans: s32, pLen_out: *size_t) -> *void #foreign minizlib;
+tdefl_write_image_to_png_file_in_memory_ex :: (pImage: *void, w: s32, h: s32, num_chans: s32, pLen_out: *size_t, level: mz_uint, flip: mz_bool) -> *void #foreign miniz;
+tdefl_write_image_to_png_file_in_memory :: (pImage: *void, w: s32, h: s32, num_chans: s32, pLen_out: *size_t) -> *void #foreign miniz;
 
 /* Output stream interface. The compressor uses this interface to write compressed data. It'll typically be called TDEFL_OUT_BUF_SIZE at a time. */
 tdefl_put_buf_func_ptr :: #type (a0: *void, a1: s32, a2: *void) -> mz_bool #c_call;
 
 /* tdefl_compress_mem_to_output() compresses a block to an output stream. The above helpers use this function internally. */
-tdefl_compress_mem_to_output :: (pBuf: *void, buf_len: size_t, pPut_buf_func: tdefl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> mz_bool #foreign minizlib;
+tdefl_compress_mem_to_output :: (pBuf: *void, buf_len: size_t, pPut_buf_func: tdefl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> mz_bool #foreign miniz;
 
 TDEFL_2 :: enum s32 {
     MAX_HUFF_TABLES    :: 3;
@@ -595,29 +726,29 @@ tdefl_compressor :: struct {
 /* pBut_buf_func: If NULL, output data will be supplied to the specified callback. In this case, the user should call the tdefl_compress_buffer() API for compression. */
 /* If pBut_buf_func is NULL the user should always call the tdefl_compress() API. */
 /* flags: See the above enums (TDEFL_HUFFMAN_ONLY, TDEFL_WRITE_ZLIB_HEADER, etc.) */
-tdefl_init :: (d: *tdefl_compressor, pPut_buf_func: tdefl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> tdefl_status #foreign minizlib;
+tdefl_init :: (d: *tdefl_compressor, pPut_buf_func: tdefl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> tdefl_status #foreign miniz;
 
 /* Compresses a block of data, consuming as much of the specified input buffer as possible, and writing as much compressed data to the specified output buffer as possible. */
-tdefl_compress :: (d: *tdefl_compressor, pIn_buf: *void, pIn_buf_size: *size_t, pOut_buf: *void, pOut_buf_size: *size_t, flush: tdefl_flush) -> tdefl_status #foreign minizlib;
+tdefl_compress :: (d: *tdefl_compressor, pIn_buf: *void, pIn_buf_size: *size_t, pOut_buf: *void, pOut_buf_size: *size_t, flush: tdefl_flush) -> tdefl_status #foreign miniz;
 
 /* tdefl_compress_buffer() is only usable when the tdefl_init() is called with a non-NULL tdefl_put_buf_func_ptr. */
 /* tdefl_compress_buffer() always consumes the entire input buffer. */
-tdefl_compress_buffer :: (d: *tdefl_compressor, pIn_buf: *void, in_buf_size: size_t, flush: tdefl_flush) -> tdefl_status #foreign minizlib;
+tdefl_compress_buffer :: (d: *tdefl_compressor, pIn_buf: *void, in_buf_size: size_t, flush: tdefl_flush) -> tdefl_status #foreign miniz;
 
-tdefl_get_prev_return_status :: (d: *tdefl_compressor) -> tdefl_status #foreign minizlib;
-tdefl_get_adler32 :: (d: *tdefl_compressor) -> mz_uint32 #foreign minizlib;
+tdefl_get_prev_return_status :: (d: *tdefl_compressor) -> tdefl_status #foreign miniz;
+tdefl_get_adler32 :: (d: *tdefl_compressor) -> mz_uint32 #foreign miniz;
 
 /* Create tdefl_compress() flags given zlib-style compression parameters. */
 /* level may range from [0,10] (where 10 is absolute max compression, but may be much slower on some files) */
 /* window_bits may be -15 (raw deflate) or 15 (zlib) */
 /* strategy may be either MZ_DEFAULT_STRATEGY, MZ_FILTERED, MZ_HUFFMAN_ONLY, MZ_RLE, or MZ_FIXED */
-tdefl_create_comp_flags_from_zip_params :: (level: s32, window_bits: s32, strategy: s32) -> mz_uint #foreign minizlib;
+tdefl_create_comp_flags_from_zip_params :: (level: s32, window_bits: s32, strategy: s32) -> mz_uint #foreign miniz;
 
 /* Allocate the tdefl_compressor structure in C so that */
 /* non-C language bindings to tdefl_ API don't need to worry about */
 /* structure size and allocation mechanism. */
-tdefl_compressor_alloc :: () -> *tdefl_compressor #foreign minizlib;
-tdefl_compressor_free :: (pComp: *tdefl_compressor) -> void #foreign minizlib;
+tdefl_compressor_alloc :: () -> *tdefl_compressor #foreign miniz;
+tdefl_compressor_free :: (pComp: *tdefl_compressor) -> void #foreign miniz;
 
 /* Decompression flags used by tinfl_decompress(). */
 /* TINFL_FLAG_PARSE_ZLIB_HEADER: If set, the input has a valid zlib header and ends with an adler32 checksum (it's a valid zlib stream). Otherwise, the input is a raw deflate stream. */
@@ -644,22 +775,22 @@ TINFL_FLAG :: enum s32 {
 /*  Function returns a pointer to the decompressed data, or NULL on failure. */
 /*  *pOut_len will be set to the decompressed data's size, which could be larger than src_buf_len on uncompressible data. */
 /*  The caller must call mz_free() on the returned block when it's no longer needed. */
-tinfl_decompress_mem_to_heap :: (pSrc_buf: *void, src_buf_len: size_t, pOut_len: *size_t, flags: s32) -> *void #foreign minizlib;
+tinfl_decompress_mem_to_heap :: (pSrc_buf: *void, src_buf_len: size_t, pOut_len: *size_t, flags: s32) -> *void #foreign miniz;
 
-tinfl_decompress_mem_to_mem :: (pOut_buf: *void, out_buf_len: size_t, pSrc_buf: *void, src_buf_len: size_t, flags: s32) -> size_t #foreign minizlib;
+tinfl_decompress_mem_to_mem :: (pOut_buf: *void, out_buf_len: size_t, pSrc_buf: *void, src_buf_len: size_t, flags: s32) -> size_t #foreign miniz;
 
 /* tinfl_decompress_mem_to_callback() decompresses a block in memory to an internal 32KB buffer, and a user provided callback function will be called to flush the buffer. */
 /* Returns 1 on success or 0 on failure. */
 tinfl_put_buf_func_ptr :: #type (a0: *void, a1: s32, a2: *void) -> s32 #c_call;
-tinfl_decompress_mem_to_callback :: (pIn_buf: *void, pIn_buf_size: *size_t, pPut_buf_func: tinfl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> s32 #foreign minizlib;
+tinfl_decompress_mem_to_callback :: (pIn_buf: *void, pIn_buf_size: *size_t, pPut_buf_func: tinfl_put_buf_func_ptr, pPut_buf_user: *void, flags: s32) -> s32 #foreign miniz;
 
 tinfl_decompressor :: tinfl_decompressor_tag;
 
 /* Allocate the tinfl_decompressor structure in C so that */
 /* non-C language bindings to tinfl_ API don't need to worry about */
 /* structure size and allocation mechanism. */
-tinfl_decompressor_alloc :: () -> *tinfl_decompressor #foreign minizlib;
-tinfl_decompressor_free :: (pDecomp: *tinfl_decompressor) -> void #foreign minizlib;
+tinfl_decompressor_alloc :: () -> *tinfl_decompressor #foreign miniz;
+tinfl_decompressor_free :: (pDecomp: *tinfl_decompressor) -> void #foreign miniz;
 
 /* Return status. */
 tinfl_status :: enum s32 {
@@ -694,7 +825,7 @@ tinfl_status :: enum s32 {
 
 /* Main low-level decompressor coroutine function. This is the only function actually needed for decompression. All the other functions are just high-level helpers for improved usability. */
 /* This is a universal API, i.e. it can be used as a building block to build any desired higher level decompression API. In the limit case, it can be called once per every byte input or output. */
-tinfl_decompress :: (r: *tinfl_decompressor, pIn_buf_next: *mz_uint8, pIn_buf_size: *size_t, pOut_buf_start: *mz_uint8, pOut_buf_next: *mz_uint8, pOut_buf_size: *size_t, decomp_flags: mz_uint32) -> tinfl_status #foreign minizlib;
+tinfl_decompress :: (r: *tinfl_decompressor, pIn_buf_next: *mz_uint8, pIn_buf_size: *size_t, pOut_buf_start: *mz_uint8, pOut_buf_next: *mz_uint8, pOut_buf_size: *size_t, decomp_flags: mz_uint32) -> tinfl_status #foreign miniz;
 
 /* Internal/private bits follow. */
 TINFL :: enum s32 {
@@ -1086,197 +1217,103 @@ mz_zip_archive :: struct {
 
 /* Inits a ZIP archive reader. */
 /* These functions read and validate the archive's central directory. */
-mz_zip_reader_init :: (pZip: *mz_zip_archive, size: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_init :: (pZip: *mz_zip_archive, size: mz_uint64, flags: mz_uint) -> mz_bool #foreign miniz;
 
-mz_zip_reader_init_mem :: (pZip: *mz_zip_archive, pMem: *void, size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_init_mem :: (pZip: *mz_zip_archive, pMem: *void, size: size_t, flags: mz_uint) -> mz_bool #foreign miniz;
 
 /* Read a archive from a disk file. */
 /* file_start_ofs is the file offset where the archive actually begins, or 0. */
 /* actual_archive_size is the true total size of the archive, which may be smaller than the file's actual size on disk. If zero the entire file is treated as the archive. */
-mz_zip_reader_init_file :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint32) -> mz_bool #foreign minizlib;
-mz_zip_reader_init_file_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint, file_start_ofs: mz_uint64, archive_size: mz_uint64) -> mz_bool #foreign minizlib;
+mz_zip_reader_init_file :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint32) -> mz_bool #foreign miniz;
+mz_zip_reader_init_file_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint, file_start_ofs: mz_uint64, archive_size: mz_uint64) -> mz_bool #foreign miniz;
 
 /* Read an archive from an already opened FILE, beginning at the current file position. */
 /* The archive is assumed to be archive_size bytes long. If archive_size is < 0, then the entire rest of the file is assumed to contain the archive. */
 /* The FILE will NOT be closed when mz_zip_reader_end() is called. */
-mz_zip_reader_init_cfile :: (pZip: *mz_zip_archive, pFile: *FILE, archive_size: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_init_cfile :: (pZip: *mz_zip_archive, pFile: *FILE, archive_size: mz_uint64, flags: mz_uint) -> mz_bool #foreign miniz;
 
 /* Ends archive reading, freeing all allocations, and closing the input archive file if mz_zip_reader_init_file() was used. */
-mz_zip_reader_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
+mz_zip_reader_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign miniz;
 
 /* Clears a mz_zip_archive struct to all zeros. */
 /* Important: This must be done before passing the struct to any mz_zip functions. */
-mz_zip_zero_struct :: (pZip: *mz_zip_archive) -> void #foreign minizlib;
+mz_zip_zero_struct :: (pZip: *mz_zip_archive) -> void #foreign miniz;
 
-mz_zip_get_mode :: (pZip: *mz_zip_archive) -> mz_zip_mode #foreign minizlib;
-mz_zip_get_type :: (pZip: *mz_zip_archive) -> mz_zip_type #foreign minizlib;
+mz_zip_get_mode :: (pZip: *mz_zip_archive) -> mz_zip_mode #foreign miniz;
+mz_zip_get_type :: (pZip: *mz_zip_archive) -> mz_zip_type #foreign miniz;
 
 /* Returns the total number of files in the archive. */
-mz_zip_reader_get_num_files :: (pZip: *mz_zip_archive) -> mz_uint #foreign minizlib;
+mz_zip_reader_get_num_files :: (pZip: *mz_zip_archive) -> mz_uint #foreign miniz;
 
-mz_zip_get_archive_size :: (pZip: *mz_zip_archive) -> mz_uint64 #foreign minizlib;
-mz_zip_get_archive_file_start_offset :: (pZip: *mz_zip_archive) -> mz_uint64 #foreign minizlib;
-mz_zip_get_cfile :: (pZip: *mz_zip_archive) -> *FILE #foreign minizlib;
+mz_zip_get_archive_size :: (pZip: *mz_zip_archive) -> mz_uint64 #foreign miniz;
+mz_zip_get_archive_file_start_offset :: (pZip: *mz_zip_archive) -> mz_uint64 #foreign miniz;
+mz_zip_get_cfile :: (pZip: *mz_zip_archive) -> *FILE #foreign miniz;
 
 /* Reads n bytes of raw archive data, starting at file offset file_ofs, to pBuf. */
-mz_zip_read_archive_data :: (pZip: *mz_zip_archive, file_ofs: mz_uint64, pBuf: *void, n: size_t) -> size_t #foreign minizlib;
-
-/* Attempts to locates a file in the archive's central directory. */
-/* Valid flags: MZ_ZIP_FLAG_CASE_SENSITIVE, MZ_ZIP_FLAG_IGNORE_PATH */
-/* Returns -1 if the file cannot be found. */
-// mz_zip_locate_file :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint) -> s32 #foreign __UnknownLib;
-
-/* Returns MZ_FALSE if the file cannot be found. */
-// mz_zip_locate_file_v2 :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint, pIndex: *mz_uint32) -> mz_bool #foreign __UnknownLib;
+mz_zip_read_archive_data :: (pZip: *mz_zip_archive, file_ofs: mz_uint64, pBuf: *void, n: size_t) -> size_t #foreign miniz;
 
 /* All mz_zip funcs set the m_last_error field in the mz_zip_archive struct. These functions retrieve/manipulate this field. */
 /* Note that the m_last_error functionality is not thread safe. */
-mz_zip_set_last_error :: (pZip: *mz_zip_archive, err_num: mz_zip_error) -> mz_zip_error #foreign minizlib;
-mz_zip_peek_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign minizlib;
-mz_zip_clear_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign minizlib;
-mz_zip_get_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign minizlib;
-mz_zip_get_error_string :: (mz_err: mz_zip_error) -> *u8 #foreign minizlib;
+mz_zip_set_last_error :: (pZip: *mz_zip_archive, err_num: mz_zip_error) -> mz_zip_error #foreign miniz;
+mz_zip_peek_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign miniz;
+mz_zip_clear_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign miniz;
+mz_zip_get_last_error :: (pZip: *mz_zip_archive) -> mz_zip_error #foreign miniz;
+mz_zip_get_error_string :: (mz_err: mz_zip_error) -> *u8 #foreign miniz;
 
 /* MZ_TRUE if the archive file entry is a directory entry. */
-mz_zip_reader_is_file_a_directory :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_is_file_a_directory :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign miniz;
 
 /* MZ_TRUE if the file is encrypted/strong encrypted. */
-mz_zip_reader_is_file_encrypted :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_is_file_encrypted :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign miniz;
 
 /* MZ_TRUE if the compression method is supported, and the file is not encrypted, and the file is not a compressed patch file. */
-mz_zip_reader_is_file_supported :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_is_file_supported :: (pZip: *mz_zip_archive, file_index: mz_uint) -> mz_bool #foreign miniz;
 
 /* Retrieves the filename of an archive file entry. */
 /* Returns the number of bytes written to pFilename, or if filename_buf_size is 0 this function returns the number of bytes needed to fully store the filename. */
-mz_zip_reader_get_filename :: (pZip: *mz_zip_archive, file_index: mz_uint, pFilename: *u8, filename_buf_size: mz_uint) -> mz_uint #foreign minizlib;
+mz_zip_reader_get_filename :: (pZip: *mz_zip_archive, file_index: mz_uint, pFilename: *u8, filename_buf_size: mz_uint) -> mz_uint #foreign miniz;
 
 /* Attempts to locates a file in the archive's central directory. */
 /* Valid flags: MZ_ZIP_FLAG_CASE_SENSITIVE, MZ_ZIP_FLAG_IGNORE_PATH */
 /* Returns -1 if the file cannot be found. */
-mz_zip_reader_locate_file :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint) -> s32 #foreign minizlib;
-mz_zip_reader_locate_file_v2 :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint, file_index: *mz_uint32) -> s32 #foreign minizlib;
+mz_zip_reader_locate_file :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint) -> s32 #foreign miniz;
+mz_zip_reader_locate_file_v2 :: (pZip: *mz_zip_archive, pName: *u8, pComment: *u8, flags: mz_uint, file_index: *mz_uint32) -> s32 #foreign miniz;
 
 /* Returns detailed information about an archive file entry. */
-mz_zip_reader_file_stat :: (pZip: *mz_zip_archive, file_index: mz_uint, pStat: *mz_zip_archive_file_stat) -> mz_bool #foreign minizlib;
+mz_zip_reader_file_stat :: (pZip: *mz_zip_archive, file_index: mz_uint, pStat: *mz_zip_archive_file_stat) -> mz_bool #foreign miniz;
 
 /* MZ_TRUE if the file is in zip64 format. */
 /* A file is considered zip64 if it contained a zip64 end of central directory marker, or if it contained any zip64 extended file information fields in the central directory. */
-mz_zip_is_zip64 :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
+mz_zip_is_zip64 :: (pZip: *mz_zip_archive) -> mz_bool #foreign miniz;
 
 /* Returns the total central directory size in bytes. */
 /* The current max supported size is <= MZ_UINT32_MAX. */
-mz_zip_get_central_dir_size :: (pZip: *mz_zip_archive) -> size_t #foreign minizlib;
+mz_zip_get_central_dir_size :: (pZip: *mz_zip_archive) -> size_t #foreign miniz;
 
 /* Extracts a archive file to a memory buffer using no memory allocation. */
 /* There must be at least enough room on the stack to store the inflator's state (~34KB or so). */
-mz_zip_reader_extract_to_mem_no_alloc :: (pZip: *mz_zip_archive, file_index: mz_uint, pBuf: *void, buf_size: size_t, flags: mz_uint, pUser_read_buf: *void, user_read_buf_size: size_t) -> mz_bool #foreign minizlib;
-mz_zip_reader_extract_file_to_mem_no_alloc :: (pZip: *mz_zip_archive, pFilename: *u8, pBuf: *void, buf_size: size_t, flags: mz_uint, pUser_read_buf: *void, user_read_buf_size: size_t) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_to_mem_no_alloc :: (pZip: *mz_zip_archive, file_index: mz_uint, pBuf: *void, buf_size: size_t, flags: mz_uint, pUser_read_buf: *void, user_read_buf_size: size_t) -> mz_bool #foreign miniz;
+mz_zip_reader_extract_file_to_mem_no_alloc :: (pZip: *mz_zip_archive, pFilename: *u8, pBuf: *void, buf_size: size_t, flags: mz_uint, pUser_read_buf: *void, user_read_buf_size: size_t) -> mz_bool #foreign miniz;
 
 /* Extracts a archive file to a memory buffer. */
-mz_zip_reader_extract_to_mem :: (pZip: *mz_zip_archive, file_index: mz_uint, pBuf: *void, buf_size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
-mz_zip_reader_extract_file_to_mem :: (pZip: *mz_zip_archive, pFilename: *u8, pBuf: *void, buf_size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_to_mem :: (pZip: *mz_zip_archive, file_index: mz_uint, pBuf: *void, buf_size: size_t, flags: mz_uint) -> mz_bool #foreign miniz;
+mz_zip_reader_extract_file_to_mem :: (pZip: *mz_zip_archive, pFilename: *u8, pBuf: *void, buf_size: size_t, flags: mz_uint) -> mz_bool #foreign miniz;
 
 /* Extracts a archive file to a dynamically allocated heap buffer. */
 /* The memory will be allocated via the mz_zip_archive's alloc/realloc functions. */
 /* Returns NULL and sets the last error on failure. */
-mz_zip_reader_extract_to_heap :: (pZip: *mz_zip_archive, file_index: mz_uint, pSize: *size_t, flags: mz_uint) -> *void #foreign minizlib;
-mz_zip_reader_extract_file_to_heap :: (pZip: *mz_zip_archive, pFilename: *u8, pSize: *size_t, flags: mz_uint) -> *void #foreign minizlib;
+mz_zip_reader_extract_to_heap :: (pZip: *mz_zip_archive, file_index: mz_uint, pSize: *size_t, flags: mz_uint) -> *void #foreign miniz;
+mz_zip_reader_extract_file_to_heap :: (pZip: *mz_zip_archive, pFilename: *u8, pSize: *size_t, flags: mz_uint) -> *void #foreign miniz;
 
 /* Extracts a archive file using a callback function to output the file's data. */
-mz_zip_reader_extract_to_callback :: (pZip: *mz_zip_archive, file_index: mz_uint, pCallback: mz_file_write_func, pOpaque: *void, flags: mz_uint) -> mz_bool #foreign minizlib;
-mz_zip_reader_extract_file_to_callback :: (pZip: *mz_zip_archive, pFilename: *u8, pCallback: mz_file_write_func, pOpaque: *void, flags: mz_uint) -> mz_bool #foreign minizlib;
+mz_zip_reader_extract_to_callback :: (pZip: *mz_zip_archive, file_index: mz_uint, pCallback: mz_file_write_func, pOpaque: *void, flags: mz_uint) -> mz_bool #foreign miniz;
+mz_zip_reader_extract_file_to_callback :: (pZip: *mz_zip_archive, pFilename: *u8, pCallback: mz_file_write_func, pOpaque: *void, flags: mz_uint) -> mz_bool #foreign miniz;
 
 /* Extracts a archive file to a disk file and sets its last accessed and modified times. */
 /* This function only extracts files, not archive directory records. */
-mz_zip_reader_extract_to_file :: (pZip: *mz_zip_archive, file_index: mz_uint, pDst_filename: *u8, flags: mz_uint) -> mz_bool #foreign minizlib;
-mz_zip_reader_extract_file_to_file :: (pZip: *mz_zip_archive, pArchive_filename: *u8, pDst_filename: *u8, flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Extracts a archive file starting at the current position in the destination FILE stream. */
-mz_zip_reader_extract_to_cfile :: (pZip: *mz_zip_archive, file_index: mz_uint, File: *FILE, flags: mz_uint) -> mz_bool #foreign minizlib;
-mz_zip_reader_extract_file_to_cfile :: (pZip: *mz_zip_archive, pArchive_filename: *u8, pFile: *FILE, flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* This function compares the archive's local headers, the optional local zip64 extended information block, and the optional descriptor following the compressed data vs. the data in the central directory. */
-/* It also validates that each file can be successfully uncompressed unless the MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY is specified. */
-mz_zip_validate_file :: (pZip: *mz_zip_archive, file_index: mz_uint, flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Validates an entire archive by calling mz_zip_validate_file() on each file. */
-mz_zip_validate_archive :: (pZip: *mz_zip_archive, flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Misc utils/helpers, valid for ZIP reading or writing */
-mz_zip_validate_mem_archive :: (pMem: *void, size: size_t, flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign minizlib;
-mz_zip_validate_file_archive :: (pFilename: *u8, flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign minizlib;
-
-/* Universal end function - calls either mz_zip_reader_end() or mz_zip_writer_end(). */
-mz_zip_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
-
-/* Inits a ZIP archive writer. */
-mz_zip_writer_init :: (pZip: *mz_zip_archive, existing_size: mz_uint64) -> mz_bool #foreign minizlib;
-mz_zip_writer_init_v2 :: (pZip: *mz_zip_archive, existing_size: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
-mz_zip_writer_init_heap :: (pZip: *mz_zip_archive, size_to_reserve_at_beginning: size_t, initial_allocation_size: size_t) -> mz_bool #foreign minizlib;
-mz_zip_writer_init_heap_v2 :: (pZip: *mz_zip_archive, size_to_reserve_at_beginning: size_t, initial_allocation_size: size_t, flags: mz_uint) -> mz_bool #foreign minizlib;
-
-mz_zip_writer_init_file :: (pZip: *mz_zip_archive, pFilename: *u8, size_to_reserve_at_beginning: mz_uint64) -> mz_bool #foreign minizlib;
-mz_zip_writer_init_file_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, size_to_reserve_at_beginning: mz_uint64, flags: mz_uint) -> mz_bool #foreign minizlib;
-mz_zip_writer_init_cfile :: (pZip: *mz_zip_archive, pFile: *FILE, flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Converts a ZIP archive reader object into a writer object, to allow efficient in-place file appends to occur on an existing archive. */
-/* For archives opened using mz_zip_reader_init_file, pFilename must be the archive's filename so it can be reopened for writing. If the file can't be reopened, mz_zip_reader_end() will be called. */
-/* For archives opened using mz_zip_reader_init_mem, the memory block must be growable using the realloc callback (which defaults to realloc unless you've overridden it). */
-/* Finally, for archives opened using mz_zip_reader_init, the mz_zip_archive's user provided m_pWrite function cannot be NULL. */
-/* Note: In-place archive modification is not recommended unless you know what you're doing, because if execution stops or something goes wrong before */
-/* the archive is finalized the file's central directory will be hosed. */
-mz_zip_writer_init_from_reader :: (pZip: *mz_zip_archive, pFilename: *u8) -> mz_bool #foreign minizlib;
-mz_zip_writer_init_from_reader_v2 :: (pZip: *mz_zip_archive, pFilename: *u8, flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Adds the contents of a memory buffer to an archive. These functions record the current local time into the archive. */
-/* To add a directory entry, call this method with an archive name ending in a forwardslash with an empty buffer. */
-/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
-mz_zip_writer_add_mem :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, level_and_flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Like mz_zip_writer_add_mem(), except you can specify a file comment field, and optionally supply the function with already compressed data. */
-/* uncomp_size/uncomp_crc32 are only used if the MZ_ZIP_FLAG_COMPRESSED_DATA flag is specified. */
-mz_zip_writer_add_mem_ex :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, uncomp_size: mz_uint64, uncomp_crc32: mz_uint32) -> mz_bool #foreign minizlib;
-
-mz_zip_writer_add_mem_ex_v2 :: (pZip: *mz_zip_archive, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, uncomp_size: mz_uint64, uncomp_crc32: mz_uint32, last_modified: *time_t, user_extra_data_local: *u8, user_extra_data_local_len: mz_uint, user_extra_data_central: *u8, user_extra_data_central_len: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Adds the contents of a disk file to an archive. This function also records the disk file's modified time into the archive. */
-/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
-mz_zip_writer_add_file :: (pZip: *mz_zip_archive, pArchive_name: *u8, pSrc_filename: *u8, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Like mz_zip_writer_add_file(), except the file data is read from the specified FILE stream. */
-mz_zip_writer_add_cfile :: (pZip: *mz_zip_archive, pArchive_name: *u8, pSrc_file: *FILE, size_to_add: mz_uint64, pFile_time: *time_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, user_extra_data_local: *u8, user_extra_data_local_len: mz_uint, user_extra_data_central: *u8, user_extra_data_central_len: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Adds a file to an archive by fully cloning the data from another archive. */
-/* This function fully clones the source file's compressed data (no recompression), along with its full filename, extra data (it may add or modify the zip64 local header extra data field), and the optional descriptor following the compressed data. */
-mz_zip_writer_add_from_zip_reader :: (pZip: *mz_zip_archive, pSource_zip: *mz_zip_archive, src_file_index: mz_uint) -> mz_bool #foreign minizlib;
-
-/* Finalizes the archive by writing the central directory records followed by the end of central directory record. */
-/* After an archive is finalized, the only valid call on the mz_zip_archive struct is mz_zip_writer_end(). */
-/* An archive must be manually finalized by calling this function for it to be valid. */
-mz_zip_writer_finalize_archive :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
-
-/* Finalizes a heap archive, returning a poiner to the heap block and its size. */
-/* The heap block will be allocated using the mz_zip_archive's alloc/realloc callbacks. */
-mz_zip_writer_finalize_heap_archive :: (pZip: *mz_zip_archive, ppBuf: **void, pSize: *size_t) -> mz_bool #foreign minizlib;
-
-/* Ends archive writing, freeing all allocations, and closing the output file if mz_zip_writer_init_file() was used. */
-/* Note for the archive to be valid, it *must* have been finalized before ending (this function will not do it for you). */
-mz_zip_writer_end :: (pZip: *mz_zip_archive) -> mz_bool #foreign minizlib;
-
-/* mz_zip_add_mem_to_archive_file_in_place() efficiently (but not atomically) appends a memory blob to a ZIP archive. */
-/* Note this is NOT a fully safe operation. If it crashes or dies in some way your archive can be left in a screwed up state (without a central directory). */
-/* level_and_flags - compression level (0-10, see MZ_BEST_SPEED, MZ_BEST_COMPRESSION, etc.) logically OR'd with zero or more mz_zip_flags, or just set to MZ_DEFAULT_COMPRESSION. */
-/* TODO: Perhaps add an option to leave the existing central dir in place in case the add dies? We could then truncate the file (so the old central dir would be at the end) if something goes wrong. */
-mz_zip_add_mem_to_archive_file_in_place :: (pZip_filename: *u8, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint) -> mz_bool #foreign minizlib;
-mz_zip_add_mem_to_archive_file_in_place_v2 :: (pZip_filename: *u8, pArchive_name: *u8, pBuf: *void, buf_size: size_t, pComment: *void, comment_size: mz_uint16, level_and_flags: mz_uint, pErr: *mz_zip_error) -> mz_bool #foreign minizlib;
-
-/* Reads a single file from an archive into a heap block. */
-/* If pComment is not NULL, only the file with the specified comment will be extracted. */
-/* Returns NULL on failure. */
-mz_zip_extract_archive_file_to_heap :: (pZip_filename: *u8, pArchive_name: *u8, pSize: *size_t, flags: mz_uint) -> *void #foreign minizlib;
-mz_zip_extract_archive_file_to_heap_v2 :: (pZip_filename: *u8, pArchive_name: *u8, pComment: *u8, pSize: *size_t, flags: mz_uint, pErr: *mz_zip_error) -> *void #foreign minizlib;
+mz_zip_reader_extract_to_file :: (pZip: *mz_zip_archive, file_index: mz_uint, pDst_filename: *u8, flags: mz_uint) -> mz_bool #foreign miniz;
 
 #scope_file
 
 #import "Basic"; // For assert
-minizlib :: #foreign_library,no_dll "./win/miniz";
+miniz :: #foreign_library,no_dll "win/miniz";

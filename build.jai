@@ -4,6 +4,7 @@
 #import "Basic";
 #import "String";
 #import "Bindings_Generator";
+#import "File";
 
 #run {
     set_build_options_dc(.{do_output=false});
@@ -28,6 +29,7 @@
     print("extra: %\n", extra);
 
     print("-------------------------- BUILDING STATIC LIBRARY --------------------------\n");
+    make_directory_if_it_does_not_exist("win");
     build_cpp_static_lib("win/miniz", ..srcs, debug=debug, extra=extra);
 
     output_filename: string;
@@ -35,9 +37,16 @@
     {
         using opts;
 
+        header = #string DONE
+size_t :: u64;
+FILE   :: *void;
+time_t :: s64;
+DONE
+
         #if OS == .WINDOWS {
             output_filename          = "windows.jai";
-            array_add(*libnames,      "minizlib");
+            array_add(*libpaths, "win");
+            array_add(*libnames, "miniz");
         } else #if OS == .LINUX {
             output_filename          = "linux.jai";
         } else #if OS == .MACOS {
@@ -51,9 +60,18 @@
         array_add(*libpaths,       ".");
         array_add(*system_include_paths, GENERATOR_DEFAULT_SYSTEM_INCLUDE_PATH);
         array_add(*source_files,  "src/miniz.h");
-        strip_flags = 0;
-        // strip_flags &= ~(Strip_Flags.CONSTRUCTORS | .DESTRUCTORS);
+        visitor = miniz_visitor;
     }
 
-    generate_bindings(opts, output_filename);
+    ok := generate_bindings(opts, output_filename);
+    assert(ok);
 };
+
+miniz_visitor :: (decl: *Declaration, parent_decl: *Declaration) -> Declaration_Visit_Result {
+    if decl.kind == .MACRO_DEFINITION {
+        if decl.output_name == "zlib_version" {
+            decl.decl_flags |= .OMIT_FROM_OUTPUT;
+        }
+    }
+    return .RECURSE;
+}

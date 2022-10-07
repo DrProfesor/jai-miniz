@@ -37,7 +37,7 @@
     {
         using opts;
 
-        header = #string DONE
+        footer = #string DONE
 size_t :: u64;
 FILE   :: *void;
 time_t :: s64;

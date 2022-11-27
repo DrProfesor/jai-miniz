@@ -24,11 +24,11 @@
         extra := "";
     }
 
-    print("srcs:  %\n", srcs);
-    print("debug: %\n", debug);
-    print("extra: %\n", extra);
+    log("srcs:  %\n", srcs);
+    log("debug: %\n", debug);
+    log("extra: %\n", extra);
 
-    print("-------------------------- BUILDING STATIC LIBRARY --------------------------\n");
+    log("-------------------------- BUILDING STATIC LIBRARY --------------------------\n");
     make_directory_if_it_does_not_exist("win");
     build_cpp_static_lib("win/miniz", ..srcs, debug=debug, extra=extra);
 

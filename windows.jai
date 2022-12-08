@@ -1,7 +1,7 @@
 //
 // This file was auto-generated using the following command:
 //
-// jai
+// jai C:/dev/train/src/workbench//external/miniz/build.jai
 //
 
 

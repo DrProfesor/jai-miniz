@@ -1302,7 +1302,7 @@ mz_zip_extract_archive_file_to_heap_v2 :: (pZip_filename: *u8, pArchive_name: *u
 #scope_file
 
 #import "Basic"; // For assert
-miniz :: #foreign_library,no_dll "win/miniz";
+miniz :: #library,no_dll "win/miniz";
 size_t :: u64;
 FILE   :: *void;
 time_t :: s64;

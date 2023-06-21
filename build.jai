@@ -36,6 +36,7 @@
     opts: Generate_Bindings_Options;
     {
         using opts;
+        add_generator_command = false;
 
         footer = #string DONE
 size_t :: u64;
